@@ -1,0 +1,43 @@
+# Render Blueprint for SwapInterCam.ox Backend
+# This file enables automatic deployment to Render.com free tier
+
+services:
+  - type: web
+    name: swapintercam-backend
+    env: node
+    plan: free
+    branch: main
+    buildCommand: "npm install --production"
+    startCommand: "node server-unified.js"
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      
+      - key: PORT
+        value: 10000  # Render will override this
+      
+      - key: HOST
+        value: 0.0.0.0
+      
+      - key: STATIC_DIR
+        value: ./frontend
+      
+      - key: API_BASE
+        value: /api
+      
+      - key: LOG_DIR
+        value: ./logs
+      
+      - key: AUDIT_TAG
+        value: mcp-unified
+      
+      - key: COMMIT_ID
+        value: 1593dde078969e57b9323a7cfdd847dcf9b1b867
+    
+    # Health check endpoint
+    healthCheckPath: /health
+    
+    # Auto-deploy on push
+    autoDeploy: true

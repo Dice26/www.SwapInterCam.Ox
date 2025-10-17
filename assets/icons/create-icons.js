@@ -1,0 +1,72 @@
+#!/usr/bin/env node
+
+/**
+ * SwapInterCam Icon Creator
+ * Creates professional application icons for branding
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+console.log('🎨 Creating SwapInterCam Application Icons');
+console.log('=========================================');
+
+// Create SVG icon
+function createSVGIcon() {
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#667eea;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.6" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="128" cy="128" r="120" fill="url(#mainGradient)" stroke="#ffffff" stroke-width="4"/>
+  
+  <!-- Camera lens outer ring -->
+  <circle cx="128" cy="128" r="80" fill="none" stroke="url(#accentGradient)" stroke-width="6"/>
+  
+  <!-- Camera lens inner -->
+  <circle cx="128" cy="128" r="50" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.8"/>
+  
+  <!-- Lens center -->
+  <circle cx="128" cy="128" r="25" fill="#ffffff" opacity="0.3"/>
+  
+  <!-- Swap arrows -->
+  <g transform="translate(128,128)">
+    <!-- Left arrow -->
+    <path d="M -60,-20 L -40,-20 L -50,-10 L -40,0 L -60,0 Z" fill="#ffffff" opacity="0.9"/>
+    <!-- Right arrow -->
+    <path d="M 40,-20 L 60,-20 L 60,0 L 40,0 L 50,-10 Z" fill="#ffffff" opacity="0.9"/>
+  </g>
+  
+  <!-- Brand text -->
+  <text x="128" y="200" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#ffffff" opacity="0.9">SI</text>
+  
+  <!-- Subtle highlight -->
+  <ellipse cx="100" cy="80" rx="30" ry="15" fill="#ffffff" opacity="0.2" transform="rotate(-30 100 80)"/>
+</svg>`;
+    
+    return svgContent;
+}
+
+// Create icons directory if it doesn't exist
+const iconsDir = path.join(__dirname);
+if (!fs.existsSync(iconsDir)) {
+    fs.mkdirSync(iconsDir, { recursive: true });
+}
+
+// Create SVG icon
+const svgIcon = createSVGIcon();
+fs.writeFileSync(path.join(iconsDir, 'swapintercam-icon.svg'), svgIcon);
+console.log('✅ Created SVG icon: swapintercam-icon.svg');
+
+console.log('🎨 Icon creation completed!');
+console.log('Note: For production, convert SVG to PNG/ICO/ICNS formats using appropriate tools.');

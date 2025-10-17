@@ -1,0 +1,85 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>SwapInterCam.ox - Multi-Platform Chat Hub</title> 
+    <style> 
+        * { margin: 0; padding: 0; box-sizing: border-box; } 
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; height: 100vh; display: flex; flex-direction: column; } 
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; } 
+        .header h1 { font-size: 1.5rem; } 
+        .chat-tabs { background: #2a2a2a; display: flex; gap: 5px; padding: 10px; } 
+        .chat-tab { padding: 10px 20px; background: #444; border: none; color: white; cursor: pointer; border-radius: 6px 6px 0 0; transition: all 0.3s ease; } 
+        .chat-tab.active { background: #667eea; } 
+        .chat-tab:hover { background: #555; } 
+        .chat-container { flex: 1; position: relative; } 
+        .chat-frame { width: 100%; height: 100%; border: none; background: white; } 
+        .session-info { background: #333; padding: 10px 20px; display: flex; justify-content: space-between; font-size: 0.9rem; } 
+    </style> 
+</head> 
+<body> 
+    <div class="header"> 
+        <h1>💬 SwapInterCam.ox - Multi-Platform Chat Hub</h1> 
+        <div><span id="session-status">Session: Active</span></div> 
+    </div> 
+    <div class="chat-tabs"> 
+        <button class="chat-tab active" onclick="loadPlatform('whatsapp')">WhatsApp Web</button> 
+        <button class="chat-tab" onclick="loadPlatform('messenger')">Facebook Messenger</button> 
+        <button class="chat-tab" onclick="loadPlatform('line')">LINE</button> 
+    </div> 
+    <div class="chat-container"> 
+        <iframe id="chat-frame" class="chat-frame" src="https://web.whatsapp.com"></iframe> 
+    </div> 
+    <div class="session-info"> 
+        <span id="platform-name">Platform: WhatsApp Web</span> 
+        <span id="session-time">Session Time: 00:00</span> 
+    </div> 
+    <script> 
+        let sessionStartTime = Date.now(); 
+        let currentPlatform = 'whatsapp'; 
+        function loadPlatform(platform) { 
+            const frame = document.getElementById('chat-frame'); 
+            const tabs = document.querySelectorAll('.chat-tab'); 
+            tabs.forEach(tab => tab.classList.remove('active')); 
+            event.target.classList.add('active'); 
+            currentPlatform = platform; 
+            switch(platform) { 
+                case 'whatsapp': 
+                    frame.src = 'https://web.whatsapp.com'; 
+                    document.getElementById('platform-name').textContent = 'Platform: WhatsApp Web'; 
+                    break; 
+                case 'messenger': 
+                    frame.src = 'https://www.messenger.com'; 
+                    document.getElementById('platform-name').textContent = 'Platform: Facebook Messenger'; 
+                    break; 
+                case 'line': 
+                    frame.src = 'https://line.me'; 
+                    document.getElementById('platform-name').textContent = 'Platform: LINE'; 
+                    break; 
+            } 
+            // Save session to MCP server 
+            saveSession(platform); 
+        } 
+        async function saveSession(platform) { 
+            try { 
+                await fetch('/api/session/save', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ platform, timestamp: Date.now() }) 
+                }); 
+            } catch (error) { 
+                console.error('Session save failed:', error); 
+            } 
+        } 
+        function updateSessionTime() { 
+            const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000); 
+            const minutes = Math.floor(elapsed / 60); 
+            const seconds = elapsed % 60; 
+            document.getElementById('session-time').textContent = `Session Time: ${minutes}:${seconds.toString().padStart(2, '0')}`; 
+        } 
+        setInterval(updateSessionTime, 1000); 
+        console.log('💬 Chat Integration Hub loaded with session management'); 
+    </script> 
+</body> 
+</html> 
