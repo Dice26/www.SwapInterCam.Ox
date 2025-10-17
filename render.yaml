@@ -7,7 +7,7 @@ services:
     env: node
     plan: free
     branch: main
-    buildCommand: "npm install --production"
+    buildCommand: "yarn install --production"
     startCommand: "node server-unified.js"
     
     # Environment variables
