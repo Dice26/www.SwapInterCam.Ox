@@ -10,7 +10,7 @@ const API_CONFIG = {
     
     // Production (Render.com)
     production: {
-        baseUrl: 'https://swapintercam.onrender.com',
+        baseUrl: 'https://www-swapintercam-ox.onrender.com',
         apiBase: '/api'
     }
 };
