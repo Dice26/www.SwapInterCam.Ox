@@ -131,11 +131,26 @@ app.get('/health', (req, res) => {
         tag: AUDIT_TAG,
         env: NODE_ENV,
         commit: COMMIT_ID,
+        staticDir: STATIC_DIR,
         services: {
             mcp: 'up',
             swep: 'up',
             web: 'up'
         }
+    });
+});
+
+// Debug endpoint to check static directory
+app.get('/debug', (req, res) => {
+    const staticExists = fs.existsSync(STATIC_DIR);
+    const indexExists = fs.existsSync(path.join(STATIC_DIR, 'index.html'));
+
+    res.json({
+        staticDir: STATIC_DIR,
+        staticDirExists: staticExists,
+        indexExists: indexExists,
+        workingDir: __dirname,
+        files: staticExists ? fs.readdirSync(STATIC_DIR) : []
     });
 });
 

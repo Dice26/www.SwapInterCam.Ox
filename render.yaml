@@ -6,7 +6,7 @@ services:
     name: swapintercam-backend
     env: node
     plan: free
-    branch: main
+    branch: master
     buildCommand: "yarn install --production"
     startCommand: "node server-unified.js"
     
