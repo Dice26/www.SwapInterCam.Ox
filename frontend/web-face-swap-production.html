@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwapInterCam - Face Swap Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        .panel h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .status {
+            background: #333;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🎭 SwapInterCam Face Swap Studio</h1>
+        <p>Professional AI-Powered Face Swapping</p>
+    </div>
+
+    <div class="container">
+        <div class="feature-grid">
+            <div class="panel">
+                <h3>📸 Source Image</h3>
+                <div class="upload-area" onclick="document.getElementById('source-upload').click()">
+                    <p>Click to upload source image</p>
+                    <p style="opacity: 0.7; font-size: 0.9rem;">Drag & drop or click to browse</p>
+                </div>
+                <input type="file" id="source-upload" style="display: none;" accept="image/*">
+                <div id="source-preview"></div>
+            </div>
+
+            <div class="panel">
+                <h3>🎯 Target Image</h3>
+                <div class="upload-area" onclick="document.getElementById('target-upload').click()">
+                    <p>Click to upload target image</p>
+                    <p style="opacity: 0.7; font-size: 0.9rem;">Drag & drop or click to browse</p>
+                </div>
+                <input type="file" id="target-upload" style="display: none;" accept="image/*">
+                <div id="target-preview"></div>
+            </div>
+        </div>
+
+        <div class="status">
+            <h3>🔄 Processing Status</h3>
+            <div id="status-display">Ready to process face swap</div>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="btn" onclick="processSwap()">🎭 Start Face Swap</button>
+            <button class="btn" onclick="downloadResult()">💾 Download Result</button>
+            <button class="btn" onclick="resetAll()">🔄 Reset</button>
+        </div>
+
+        <div class="panel">
+            <h3>✨ Result Preview</h3>
+            <div id="result-container" style="text-align: center; padding: 40px;">
+                <p style="opacity: 0.7;">Face swap result will appear here</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🎭 Face Swap Studio Loading...');
+
+        let sourceImage = null;
+        let targetImage = null;
+
+        // File upload handlers
+        document.getElementById('source-upload').addEventListener('change', function (e) {
+            handleImageUpload(e.target.files[0], 'source');
+        });
+
+        document.getElementById('target-upload').addEventListener('change', function (e) {
+            handleImageUpload(e.target.files[0], 'target');
+        });
+
+        function handleImageUpload(file, type) {
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '200px';
+                img.style.marginTop = '10px';
+                img.style.borderRadius = '6px';
+
+                if (type === 'source') {
+                    sourceImage = e.target.result;
+                    document.getElementById('source-preview').innerHTML = '';
+                    document.getElementById('source-preview').appendChild(img);
+                } else {
+                    targetImage = e.target.result;
+                    document.getElementById('target-preview').innerHTML = '';
+                    document.getElementById('target-preview').appendChild(img);
+                }
+
+                updateStatus(`${type} image loaded successfully`);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status-display').textContent = message;
+        }
+
+        function processSwap() {
+            if (!sourceImage || !targetImage) {
+                alert('Please upload both source and target images first');
+                return;
+            }
+
+            updateStatus('🔄 Processing face swap... (Demo mode)');
+
+            // Simulate processing
+            setTimeout(() => {
+                updateStatus('✅ Face swap completed successfully!');
+
+                // Show demo result
+                const resultContainer = document.getElementById('result-container');
+                resultContainer.innerHTML = `
+                    <div style="background: rgba(102, 126, 234, 0.1); padding: 20px; border-radius: 8px;">
+                        <h4>🎭 Demo Result</h4>
+                        <p>In production, this would show the AI-processed face swap result</p>
+                        <p style="opacity: 0.7; margin-top: 10px;">Connect to MCP backend for actual processing</p>
+                    </div>
+                `;
+            }, 2000);
+        }
+
+        function downloadResult() {
+            alert('💾 Download feature available in full version');
+        }
+
+        function resetAll() {
+            sourceImage = null;
+            targetImage = null;
+            document.getElementById('source-preview').innerHTML = '';
+            document.getElementById('target-preview').innerHTML = '';
+            document.getElementById('result-container').innerHTML = '<p style="opacity: 0.7;">Face swap result will appear here</p>';
+            updateStatus('Ready to process face swap');
+        }
+
+        console.log('✅ Face Swap Studio Ready!');
+    </script>
+</body>
+
+</html>

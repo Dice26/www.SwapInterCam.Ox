@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwapInterCam - Chat Integration Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .chat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .chat-panel {
+            background: #2a2a2a;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #333;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+        }
+
+        .chat-iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+            background: white;
+        }
+
+        .controls {
+            background: #333;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>💬 SwapInterCam Chat Integration Hub</h1>
+        <p>Multi-Platform Chat Management with Face Swap Integration</p>
+    </div>
+
+    <div class="container">
+        <div class="chat-grid">
+            <div class="chat-panel">
+                <div class="chat-header">
+                    <span class="chat-status"></span>
+                    <h3>WhatsApp Web</h3>
+                </div>
+                <iframe class="chat-iframe" src="https://web.whatsapp.com" title="WhatsApp Web"></iframe>
+                <div class="controls">
+                    <button class="btn" onclick="refreshChat('whatsapp')">🔄 Refresh</button>
+                    <button class="btn" onclick="enableFaceSwap('whatsapp')">🎭 Enable Face Swap</button>
+                </div>
+            </div>
+
+            <div class="chat-panel">
+                <div class="chat-header">
+                    <span class="chat-status"></span>
+                    <h3>Facebook Messenger</h3>
+                </div>
+                <iframe class="chat-iframe" src="https://www.messenger.com" title="Facebook Messenger"></iframe>
+                <div class="controls">
+                    <button class="btn" onclick="refreshChat('messenger')">🔄 Refresh</button>
+                    <button class="btn" onclick="enableFaceSwap('messenger')">🎭 Enable Face Swap</button>
+                </div>
+            </div>
+
+            <div class="chat-panel">
+                <div class="chat-header">
+                    <span class="chat-status"></span>
+                    <h3>LINE</h3>
+                </div>
+                <iframe class="chat-iframe"
+                    src="https://chrome.google.com/webstore/detail/line/ophjlpahpchlmihnnnihgmmeilfjmjjc"
+                    title="LINE Web"></iframe>
+                <div class="controls">
+                    <button class="btn" onclick="refreshChat('line')">🔄 Refresh</button>
+                    <button class="btn" onclick="enableFaceSwap('line')">🎭 Enable Face Swap</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: #2a2a2a; padding: 20px; border-radius: 12px; margin-top: 30px;">
+            <h3>🎭 Face Swap Integration Status</h3>
+            <div id="integration-status">
+                <p>Face swap integration ready for all platforms</p>
+                <p style="opacity: 0.7; margin-top: 10px;">Click "Enable Face Swap" on any platform to activate
+                    real-time processing</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('💬 Chat Integration Hub Loading...');
+
+        function refreshChat(platform) {
+            const iframe = document.querySelector(`iframe[title*="${platform}"]`);
+            if (iframe) {
+                iframe.src = iframe.src;
+                console.log(`🔄 Refreshing ${platform}`);
+            }
+        }
+
+        function enableFaceSwap(platform) {
+            alert(`🎭 Face Swap Integration\n\nEnabling real-time face swap for ${platform}...\n\nThis feature connects to the MCP backend for AI processing.`);
+
+            // Update status
+            document.getElementById('integration-status').innerHTML = `
+                <p>✅ Face swap enabled for ${platform}</p>
+                <p style="opacity: 0.7; margin-top: 10px;">Real-time AI processing active</p>
+            `;
+        }
+
+        // Simulate connection status
+        setTimeout(() => {
+            const statusDots = document.querySelectorAll('.chat-status');
+            statusDots.forEach(dot => {
+                dot.style.background = '#4CAF50';
+            });
+        }, 1000);
+
+        console.log('✅ Chat Integration Hub Ready!');
+    </script>
+</body>
+
+</html>

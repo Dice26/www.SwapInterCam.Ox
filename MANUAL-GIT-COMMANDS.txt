@@ -1,0 +1,26 @@
+Manual Git Commands for SwapInterCam.ox Deployment
+==================================================
+
+1. Open Command Prompt in: testing-environment/swapintercam-ox/
+
+2. Run these commands one by one:
+
+"C:\Program Files\Git\bin\git.exe" init
+
+"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/Dice26/www.SwapInterCam.Ox.git
+
+"C:\Program Files\Git\bin\git.exe" add .
+
+"C:\Program Files\Git\bin\git.exe" commit -m "Fix: Resolve 404 error - Update static directory path and enhance frontend interface"
+
+"C:\Program Files\Git\bin\git.exe" push -u origin main
+
+==================================================
+
+Expected Result:
+- Changes pushed to GitHub
+- Render automatically detects changes
+- New deployment starts (~3-5 minutes)
+- Site becomes functional at: https://www-swapintercam-ox.onrender.com/
+
+==================================================

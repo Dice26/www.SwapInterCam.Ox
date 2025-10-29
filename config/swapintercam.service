@@ -1,0 +1,49 @@
+# SwapInterCam.ox - Systemd Service Configuration
+# Place this file at: /etc/systemd/system/swapintercam.service
+# Enable with: sudo systemctl enable swapintercam
+# Start with: sudo systemctl start swapintercam
+
+[Unit]
+Description=SwapInterCam.ox Unified MCP Server
+Documentation=https://github.com/YOUR_USERNAME/www.SwapInterCam.Ox
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/swapintercam
+ExecStart=/usr/bin/node server-unified.js
+Restart=on-failure
+RestartSec=10s
+
+# Environment variables
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOST=127.0.0.1
+Environment=STATIC_DIR=/opt/swapintercam/web
+Environment=API_BASE=/api
+Environment=LOG_DIR=/opt/swapintercam/logs
+Environment=AUDIT_TAG=mcp-unified
+Environment=COMMIT_ID=1593dde078969e57b9323a7cfdd847dcf9b1b867
+
+# User and group
+User=www-data
+Group=www-data
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/swapintercam/logs
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=swapintercam
+
+[Install]
+WantedBy=multi-user.target
