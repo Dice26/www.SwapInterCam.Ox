@@ -125,7 +125,26 @@
         <div style="text-align: center; margin: 30px 0;">
             <button class="btn" onclick="startFaceSwap()">🎭 Start Real-Time Face Swap</button>
             <button class="btn" onclick="stopFaceSwap()">⏹️ Stop Face Swap</button>
+            <button class="btn" onclick="setupVirtualCamera()">📹 Setup Virtual Camera</button>
             <button class="btn" onclick="resetAll()">🔄 Reset</button>
+        </div>
+
+        <div class="panel" style="background: #1a4d3a; border: 2px solid #4CAF50;">
+            <h3>📱 WhatsApp Integration</h3>
+            <div id="virtual-camera-status"
+                style="padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+                <p><strong>🎯 How to use face swap in WhatsApp:</strong></p>
+                <ol style="text-align: left; margin: 10px 0;">
+                    <li>Start face swap above ↑</li>
+                    <li>Download & install OBS Studio</li>
+                    <li>Add this page as Browser Source in OBS</li>
+                    <li>Start OBS Virtual Camera</li>
+                    <li>Select "OBS Virtual Camera" in WhatsApp</li>
+                </ol>
+                <button class="btn" onclick="openVirtualCameraGuide()" style="background: #4CAF50;">📖 Detailed Setup
+                    Guide</button>
+                <button class="btn" onclick="downloadOBS()" style="background: #2196F3;">⬇️ Download OBS Studio</button>
+            </div>
         </div>
 
         <div class="panel">
@@ -596,6 +615,124 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 16px Arial';
             ctx.fillText('📸 Upload target face for synchronized swap', 15, 35);
+        }
+
+        // Virtual Camera Integration Functions
+        function setupVirtualCamera() {
+            const instructions = `
+🎥 Virtual Camera Setup for WhatsApp:
+
+1. DOWNLOAD OBS STUDIO:
+   - Click "Download OBS Studio" button below
+   - Install and launch OBS Studio
+
+2. ADD BROWSER SOURCE:
+   - In OBS, click "+" in Sources
+   - Select "Browser Source"
+   - URL: ${window.location.href}
+   - Width: 640, Height: 480
+
+3. START VIRTUAL CAMERA:
+   - Click "Start Virtual Camera" in OBS
+   - Choose "OBS Virtual Camera"
+
+4. USE IN WHATSAPP:
+   - Open WhatsApp Desktop/Web
+   - Start video call
+   - Select "OBS Virtual Camera" as camera
+
+✅ Your face swap will appear in WhatsApp calls!
+            `;
+
+            alert(instructions);
+            updateVirtualCameraStatus('📋 Setup instructions displayed - Follow the steps above');
+        }
+
+        function openVirtualCameraGuide() {
+            // Open detailed guide in new tab
+            const guideWindow = window.open('', 'VirtualCameraGuide', 'width=800,height=600,scrollbars=yes');
+            guideWindow.document.write(`
+                <html>
+                <head>
+                    <title>SwapInterCam Virtual Camera Setup</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+                        h1 { color: #4CAF50; }
+                        h2 { color: #2196F3; }
+                        .step { background: #333; padding: 15px; margin: 10px 0; border-radius: 8px; }
+                        .highlight { background: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; }
+                        img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1>🎥 SwapInterCam Virtual Camera Setup</h1>
+                    
+                    <div class="step">
+                        <h2>Step 1: Download OBS Studio</h2>
+                        <p>1. Go to <a href="https://obsproject.com/" target="_blank">https://obsproject.com/</a></p>
+                        <p>2. Download OBS Studio for Windows</p>
+                        <p>3. Install and launch OBS Studio</p>
+                    </div>
+
+                    <div class="step">
+                        <h2>Step 2: Add Browser Source</h2>
+                        <p>1. In OBS, click the <span class="highlight">+</span> button in the Sources panel</p>
+                        <p>2. Select <span class="highlight">Browser Source</span></p>
+                        <p>3. Name it "SwapInterCam Face Swap"</p>
+                        <p>4. Set URL to: <span class="highlight">${window.location.href}</span></p>
+                        <p>5. Set Width: <span class="highlight">640</span>, Height: <span class="highlight">480</span></p>
+                        <p>6. Click OK</p>
+                    </div>
+
+                    <div class="step">
+                        <h2>Step 3: Start Virtual Camera</h2>
+                        <p>1. In OBS, click <span class="highlight">Start Virtual Camera</span> button</p>
+                        <p>2. Choose "OBS Virtual Camera" as camera name</p>
+                        <p>3. Click <span class="highlight">Start</span></p>
+                    </div>
+
+                    <div class="step">
+                        <h2>Step 4: Use in WhatsApp</h2>
+                        <p>1. Open WhatsApp Desktop or WhatsApp Web</p>
+                        <p>2. Start a video call</p>
+                        <p>3. Click camera settings/options</p>
+                        <p>4. Select <span class="highlight">OBS Virtual Camera</span></p>
+                        <p>5. Your face-swapped video will appear! 🎭</p>
+                    </div>
+
+                    <div class="step">
+                        <h2>🔧 Troubleshooting</h2>
+                        <p>• Restart WhatsApp after starting OBS Virtual Camera</p>
+                        <p>• Check Windows Camera Privacy Settings</p>
+                        <p>• Ensure good lighting for better face detection</p>
+                        <p>• Use high-quality target face images</p>
+                    </div>
+
+                    <div class="step">
+                        <h2>📱 Mobile WhatsApp</h2>
+                        <p>For mobile WhatsApp, you'll need screen mirroring software like Vysor (Android) or QuickTime (iPhone) to mirror your phone to PC, then use the virtual camera.</p>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
+
+        function downloadOBS() {
+            // Open OBS download page
+            window.open('https://obsproject.com/', '_blank');
+            updateVirtualCameraStatus('🔗 OBS Studio download page opened - Install OBS to continue');
+        }
+
+        function updateVirtualCameraStatus(message) {
+            const statusDiv = document.getElementById('virtual-camera-status');
+            const timestamp = new Date().toLocaleTimeString();
+            statusDiv.innerHTML = `
+                <p><strong>📹 Virtual Camera Status:</strong></p>
+                <p>${message}</p>
+                <p style="opacity: 0.7; font-size: 0.9rem;">Updated: ${timestamp}</p>
+                <button class="btn" onclick="openVirtualCameraGuide()" style="background: #4CAF50; margin: 5px;">📖 Setup Guide</button>
+                <button class="btn" onclick="downloadOBS()" style="background: #2196F3; margin: 5px;">⬇️ Download OBS</button>
+            `;
         }
 
         function processDemoVideoFrame() {
