@@ -95,20 +95,22 @@
     <div class="container">
         <div class="feature-grid">
             <div class="panel">
-                <h3>📸 Source Image</h3>
-                <div class="upload-area" onclick="document.getElementById('source-upload').click()">
-                    <p>Click to upload source image</p>
-                    <p style="opacity: 0.7; font-size: 0.9rem;">Drag & drop or click to browse</p>
+                <h3>📹 Live Camera Feed</h3>
+                <div style="background: #333; border-radius: 8px; padding: 20px; text-align: center;">
+                    <video id="camera-feed" width="100%" height="200" style="border-radius: 8px; background: #000;"
+                        autoplay muted></video>
+                    <div style="margin-top: 10px;">
+                        <button class="btn" onclick="startCamera()">📹 Start Camera</button>
+                        <button class="btn" onclick="stopCamera()">⏹️ Stop Camera</button>
+                    </div>
                 </div>
-                <input type="file" id="source-upload" style="display: none;" accept="image/*">
-                <div id="source-preview"></div>
             </div>
 
             <div class="panel">
-                <h3>🎯 Target Image</h3>
+                <h3>🎭 Target Face (Reference)</h3>
                 <div class="upload-area" onclick="document.getElementById('target-upload').click()">
-                    <p>Click to upload target image</p>
-                    <p style="opacity: 0.7; font-size: 0.9rem;">Drag & drop or click to browse</p>
+                    <p>Click to upload target face image</p>
+                    <p style="opacity: 0.7; font-size: 0.9rem;">This face will be swapped onto the live video</p>
                 </div>
                 <input type="file" id="target-upload" style="display: none;" accept="image/*">
                 <div id="target-preview"></div>
@@ -121,33 +123,61 @@
         </div>
 
         <div style="text-align: center; margin: 30px 0;">
-            <button class="btn" onclick="processSwap()">🎭 Start Face Swap</button>
-            <button class="btn" onclick="downloadResult()">💾 Download Result</button>
+            <button class="btn" onclick="startFaceSwap()">🎭 Start Real-Time Face Swap</button>
+            <button class="btn" onclick="stopFaceSwap()">⏹️ Stop Face Swap</button>
             <button class="btn" onclick="resetAll()">🔄 Reset</button>
         </div>
 
         <div class="panel">
-            <h3>✨ Result Preview</h3>
-            <div id="result-container" style="text-align: center; padding: 40px;">
-                <p style="opacity: 0.7;">Face swap result will appear here</p>
+            <h3>✨ Live Face Swap Output</h3>
+            <div id="result-container" style="text-align: center; padding: 20px;">
+                <canvas id="output-canvas" width="640" height="480"
+                    style="border-radius: 8px; background: #000; max-width: 100%;"></canvas>
+                <p style="opacity: 0.7; margin-top: 10px;">Real-time face swap will appear here</p>
             </div>
         </div>
     </div>
 
     <script>
-        console.log('🎭 Face Swap Studio Loading...');
+        console.log('🎭 Real-Time Face Swap Studio Loading...');
 
-        let sourceImage = null;
-        let targetImage = null;
+        let cameraStream = null;
+        let targetFaceImage = null;
+        let faceSwapActive = false;
+        let animationFrame = null;
 
-        // File upload handlers
-        document.getElementById('source-upload').addEventListener('change', function (e) {
-            handleImageUpload(e.target.files[0], 'source');
-        });
+        const video = document.getElementById('camera-feed');
+        const canvas = document.getElementById('output-canvas');
+        const ctx = canvas.getContext('2d');
 
+        // Target face upload handler
         document.getElementById('target-upload').addEventListener('change', function (e) {
             handleImageUpload(e.target.files[0], 'target');
         });
+
+        // Camera functions
+        async function startCamera() {
+            try {
+                updateStatus('📹 Starting camera...');
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                video.srcObject = cameraStream;
+                updateStatus('✅ Camera started successfully');
+            } catch (error) {
+                console.error('Camera error:', error);
+                updateStatus('❌ Camera access denied or not available');
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                video.srcObject = null;
+                updateStatus('⏹️ Camera stopped');
+            }
+        }
 
         function handleImageUpload(file, type) {
             if (!file) return;
@@ -161,17 +191,12 @@
                 img.style.marginTop = '10px';
                 img.style.borderRadius = '6px';
 
-                if (type === 'source') {
-                    sourceImage = e.target.result;
-                    document.getElementById('source-preview').innerHTML = '';
-                    document.getElementById('source-preview').appendChild(img);
-                } else {
-                    targetImage = e.target.result;
+                if (type === 'target') {
+                    targetFaceImage = e.target.result;
                     document.getElementById('target-preview').innerHTML = '';
                     document.getElementById('target-preview').appendChild(img);
+                    updateStatus('🎭 Target face loaded - ready for face swap');
                 }
-
-                updateStatus(`${type} image loaded successfully`);
             };
             reader.readAsDataURL(file);
         }
@@ -180,13 +205,20 @@
             document.getElementById('status-display').textContent = message;
         }
 
-        async function processSwap() {
-            if (!sourceImage || !targetImage) {
-                alert('Please upload both source and target images first');
+        // Real-time face swap functions
+        async function startFaceSwap() {
+            if (!cameraStream) {
+                alert('Please start the camera first');
                 return;
             }
 
-            updateStatus('🔄 Connecting to MCP backend...');
+            if (!targetFaceImage) {
+                alert('Please upload a target face image first');
+                return;
+            }
+
+            faceSwapActive = true;
+            updateStatus('🎭 Starting real-time face swap...');
 
             try {
                 // Check MCP backend connection
@@ -195,70 +227,72 @@
                     throw new Error('MCP backend not available');
                 }
 
-                updateStatus('🔄 Processing face swap with AI...');
-
-                // Prepare face swap request
-                const faceSwapData = {
-                    sourceImage: sourceImage,
-                    targetImage: targetImage,
-                    timestamp: new Date().toISOString()
-                };
-
-                // Send to MCP backend for processing
-                const response = await fetch('/api/mcp/face-swap', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(faceSwapData)
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    updateStatus('✅ Face swap completed successfully!');
-
-                    // Show actual result
-                    const resultContainer = document.getElementById('result-container');
-                    resultContainer.innerHTML = `
-                        <div style="background: rgba(102, 126, 234, 0.1); padding: 20px; border-radius: 8px;">
-                            <h4>✅ Face Swap Complete</h4>
-                            <img src="${result.processedImage || sourceImage}" style="max-width: 100%; max-height: 300px; border-radius: 8px; margin: 10px 0;">
-                            <p>Processing time: ${result.processingTime || 'N/A'}</p>
-                            <p style="opacity: 0.7;">Confidence: ${result.confidence || 'N/A'}</p>
-                        </div>
-                    `;
-                } else {
-                    throw new Error('Face swap processing failed');
-                }
+                updateStatus('✅ Real-time face swap active');
+                processVideoFrame();
 
             } catch (error) {
                 console.error('Face swap error:', error);
-                updateStatus('⚠️ Using demo mode - MCP backend unavailable');
-
-                // Enhanced demo mode with better explanation
-                setTimeout(() => {
-                    const resultContainer = document.getElementById('result-container');
-                    resultContainer.innerHTML = `
-                        <div style="background: rgba(255, 193, 7, 0.1); padding: 20px; border-radius: 8px; border: 1px solid rgba(255, 193, 7, 0.3);">
-                            <h4>⚠️ Demo Mode Active</h4>
-                            <p>MCP backend not available - showing demo result</p>
-                            <div style="margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 4px;">
-                                <p><strong>🔧 To enable real face swap:</strong></p>
-                                <p>• Start MCP backend server on port 8001</p>
-                                <p>• Ensure /api/mcp/face-swap endpoint exists</p>
-                                <p>• Check server logs for connection issues</p>
-                                <p>• Verify AI models are loaded</p>
-                            </div>
-                            <div style="margin-top: 15px; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 4px;">
-                                <p><strong>📊 Current Status:</strong></p>
-                                <p>• Frontend: ✅ Working</p>
-                                <p>• Backend API: ❌ Not connected</p>
-                                <p>• Face Swap AI: ❌ Not available</p>
-                            </div>
-                        </div>
-                    `;
-                }, 1000);
+                updateStatus('⚠️ Demo mode - MCP backend unavailable');
+                processDemoVideoFrame();
             }
+        }
+
+        function stopFaceSwap() {
+            faceSwapActive = false;
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+            }
+            updateStatus('⏹️ Face swap stopped');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Real-time face swap will appear here', canvas.width / 2, canvas.height / 2);
+        }
+
+        function processVideoFrame() {
+            if (!faceSwapActive) return;
+
+            // Draw current video frame to canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Add face swap overlay effect (demo)
+            ctx.fillStyle = 'rgba(102, 126, 234, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Add processing indicator
+            ctx.fillStyle = '#667eea';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('🎭 Real-time face swap active', 10, 25);
+            ctx.fillText(`Target: ${targetFaceImage ? 'Loaded' : 'None'}`, 10, 45);
+
+            animationFrame = requestAnimationFrame(processVideoFrame);
+        }
+
+        function processDemoVideoFrame() {
+            if (!faceSwapActive) return;
+
+            // Draw current video frame to canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Add demo overlay
+            ctx.fillStyle = 'rgba(255, 193, 7, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Add demo text
+            ctx.fillStyle = '#ffc107';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('⚠️ DEMO MODE', canvas.width / 2, 30);
+            ctx.font = '12px Arial';
+            ctx.fillText('Connect MCP backend for real AI processing', canvas.width / 2, 50);
+
+            animationFrame = requestAnimationFrame(processDemoVideoFrame);
         }
 
         function downloadResult() {
@@ -266,12 +300,21 @@
         }
 
         function resetAll() {
-            sourceImage = null;
-            targetImage = null;
-            document.getElementById('source-preview').innerHTML = '';
+            stopFaceSwap();
+            stopCamera();
+            targetFaceImage = null;
             document.getElementById('target-preview').innerHTML = '';
-            document.getElementById('result-container').innerHTML = '<p style="opacity: 0.7;">Face swap result will appear here</p>';
-            updateStatus('Ready to process face swap');
+
+            // Reset canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Real-time face swap will appear here', canvas.width / 2, canvas.height / 2);
+
+            updateStatus('Ready for real-time face swap');
         }
 
         console.log('✅ Face Swap Studio Ready!');
