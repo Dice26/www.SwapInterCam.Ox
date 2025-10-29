@@ -161,15 +161,32 @@
             handleImageUpload(e.target.files[0], 'target');
         });
 
-        // Camera functions
+        // Enhanced camera functions for stability
         async function startCamera() {
             try {
-                updateStatus('📹 Starting camera...');
-                cameraStream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480 }
-                });
+                updateStatus('📹 Initializing camera for synchronized processing...');
+
+                // Request high-quality camera stream for better face detection
+                const constraints = {
+                    video: {
+                        width: { ideal: 640, min: 480 },
+                        height: { ideal: 480, min: 360 },
+                        frameRate: { ideal: 30, min: 15 },
+                        facingMode: 'user' // Front camera preferred
+                    }
+                };
+
+                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = cameraStream;
-                updateStatus('✅ Camera started successfully');
+
+                // Wait for video to be ready for stable processing
+                video.onloadedmetadata = () => {
+                    updateStatus('✅ Camera synchronized - ready for face swap');
+                    // Reset position tracking for new camera session
+                    positionHistory = [];
+                    stableFacePosition = null;
+                };
+
             } catch (error) {
                 console.error('Camera error:', error);
                 updateStatus('❌ Camera access denied or not available');
@@ -404,65 +421,181 @@
             ctx.fillText('Real-time face swap will appear here', canvas.width / 2, canvas.height / 2);
         }
 
-        // Optimized video processing with frame rate control
-        let lastProcessTime = 0;
-        const targetFPS = 15; // Limit to 15 FPS for better performance
-        const frameInterval = 1000 / targetFPS;
+        // Synchronized video processing with stable frame timing
+        let frameCount = 0;
+        let lastFPSTime = Date.now();
+        let currentFPS = 0;
+        let stableFacePosition = null; // Track stable face position
+        let positionHistory = []; // Smooth face tracking
 
         function processVideoFrame() {
             if (!faceSwapActive) return;
 
+            // Stable frame processing using video's natural timing
             const currentTime = Date.now();
+            frameCount++;
 
-            // Frame rate limiting for better performance
-            if (currentTime - lastProcessTime < frameInterval) {
-                animationFrame = requestAnimationFrame(processVideoFrame);
-                return;
+            // Calculate FPS every second
+            if (currentTime - lastFPSTime >= 1000) {
+                currentFPS = frameCount;
+                frameCount = 0;
+                lastFPSTime = currentTime;
             }
-            lastProcessTime = currentTime;
 
-            // Draw current video frame to canvas
+            // Clear and draw current video frame
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Perform face detection and swapping if target face is loaded
+            // Synchronized face swapping if target face is loaded
             if (targetFaceImg && faceDetectionEnabled) {
-                // Get image data for face detection (reduced resolution for speed)
+                // Perform stable face detection
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const detectedFaces = detectFacesStable(imageData);
 
-                // Detect faces in current frame
-                detectedFaces = detectFaces(imageData);
-
-                // Swap faces for each detected face with lower confidence threshold
+                // Process each detected face with synchronized blending
                 detectedFaces.forEach(face => {
-                    if (face.confidence > 0.4) { // Lowered threshold for better detection
-                        blendFaceOntoCanvas(face);
+                    if (face.confidence > 0.5) {
+                        synchronizedFaceSwap(face);
                     }
                 });
 
-                // Enhanced processing info with performance metrics
-                const fps = Math.round(1000 / (currentTime - (lastProcessTime - frameInterval)));
-                ctx.fillStyle = '#00ff00';
-                ctx.font = 'bold 12px Arial';
-                ctx.textAlign = 'left';
-                ctx.fillText(`🎭 Faces: ${detectedFaces.length} | FPS: ${fps}`, 10, 25);
-                ctx.fillText(`Target: ${Math.round(targetFaceImg.width)}x${Math.round(targetFaceImg.height)}`, 10, 40);
-
-                if (detectedFaces.length > 0) {
-                    const confidence = Math.round(detectedFaces[0].confidence * 100);
-                    const confidenceColor = confidence > 80 ? '#00ff00' : confidence > 60 ? '#ffff00' : '#ff8800';
-                    ctx.fillStyle = confidenceColor;
-                    ctx.fillText(`Confidence: ${confidence}%`, 10, 55);
-                    ctx.fillText(`Size: ${Math.round(detectedFaces[0].width)}x${Math.round(detectedFaces[0].height)}`, 10, 70);
-                }
+                // Display synchronized processing info
+                displayProcessingInfo(detectedFaces, currentFPS);
             } else {
-                // Show status when no target face
-                ctx.fillStyle = '#ff9800';
-                ctx.font = 'bold 14px Arial';
-                ctx.textAlign = 'left';
-                ctx.fillText('⚠️ Upload target face to enable swapping', 10, 25);
+                // Show upload prompt
+                displayUploadPrompt();
             }
 
+            // Use video's natural frame rate for perfect synchronization
             animationFrame = requestAnimationFrame(processVideoFrame);
+        }
+
+        // Stable face detection with position smoothing
+        function detectFacesStable(imageData) {
+            const faces = detectFaces(imageData);
+
+            if (faces.length > 0) {
+                const face = faces[0];
+
+                // Smooth face position tracking for stability
+                positionHistory.push({
+                    x: face.x,
+                    y: face.y,
+                    width: face.width,
+                    height: face.height,
+                    confidence: face.confidence
+                });
+
+                // Keep only last 5 positions for smoothing
+                if (positionHistory.length > 5) {
+                    positionHistory.shift();
+                }
+
+                // Calculate smoothed position
+                const avgX = positionHistory.reduce((sum, pos) => sum + pos.x, 0) / positionHistory.length;
+                const avgY = positionHistory.reduce((sum, pos) => sum + pos.y, 0) / positionHistory.length;
+                const avgWidth = positionHistory.reduce((sum, pos) => sum + pos.width, 0) / positionHistory.length;
+                const avgHeight = positionHistory.reduce((sum, pos) => sum + pos.height, 0) / positionHistory.length;
+                const avgConfidence = positionHistory.reduce((sum, pos) => sum + pos.confidence, 0) / positionHistory.length;
+
+                stableFacePosition = {
+                    x: avgX,
+                    y: avgY,
+                    width: avgWidth,
+                    height: avgHeight,
+                    confidence: avgConfidence
+                };
+
+                return [stableFacePosition];
+            }
+
+            return faces;
+        }
+
+        // Synchronized face swapping with perfect alignment
+        function synchronizedFaceSwap(face) {
+            if (!targetFaceImg) return;
+
+            // Create temporary canvas for perfect blending
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = face.width;
+            tempCanvas.height = face.height;
+
+            // Draw target face to temp canvas with perfect scaling
+            tempCtx.drawImage(targetFaceImg, 0, 0, face.width, face.height);
+
+            // Apply synchronized blending to main canvas
+            ctx.save();
+
+            // Create smooth circular mask
+            ctx.beginPath();
+            ctx.arc(
+                face.x + face.width / 2,
+                face.y + face.height / 2,
+                Math.min(face.width, face.height) / 2.2,
+                0, 2 * Math.PI
+            );
+            ctx.clip();
+
+            // Perfect synchronization - blend with video timing
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 0.9; // High opacity for clear result
+
+            // Draw perfectly scaled target face
+            ctx.drawImage(tempCanvas, face.x, face.y);
+
+            ctx.restore();
+
+            // Draw stable detection indicator
+            drawStableDetectionBox(face);
+        }
+
+        // Stable detection box with confidence indication
+        function drawStableDetectionBox(face) {
+            const confidence = Math.round(face.confidence * 100);
+            const boxColor = confidence > 85 ? '#00ff00' :
+                confidence > 70 ? '#ffff00' : '#ff8800';
+
+            // Smooth detection box
+            ctx.strokeStyle = boxColor;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(face.x, face.y, face.width, face.height);
+            ctx.setLineDash([]);
+
+            // Confidence badge
+            ctx.fillStyle = boxColor;
+            ctx.fillRect(face.x, face.y - 25, 80, 20);
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(`${confidence}%`, face.x + 5, face.y - 10);
+        }
+
+        // Display synchronized processing information
+        function displayProcessingInfo(faces, fps) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(10, 10, 250, 80);
+
+            ctx.fillStyle = '#00ff00';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`🎭 Synchronized Face Swap`, 15, 30);
+            ctx.fillText(`FPS: ${fps} | Faces: ${faces.length}`, 15, 50);
+
+            if (faces.length > 0) {
+                const face = faces[0];
+                ctx.fillText(`Size: ${Math.round(face.width)}x${Math.round(face.height)}`, 15, 70);
+            }
+        }
+
+        // Display upload prompt
+        function displayUploadPrompt() {
+            ctx.fillStyle = 'rgba(255, 152, 0, 0.8)';
+            ctx.fillRect(10, 10, 300, 40);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText('📸 Upload target face for synchronized swap', 15, 35);
         }
 
         function processDemoVideoFrame() {
