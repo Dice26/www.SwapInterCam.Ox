@@ -19,7 +19,7 @@ const app = express();
 // ============================================
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
-const STATIC_DIR = process.env.STATIC_DIR || path.join(__dirname, 'frontend');
+const STATIC_DIR = process.env.STATIC_DIR || path.resolve(__dirname, 'frontend');
 const API_BASE = process.env.API_BASE || '/api';
 const LOG_DIR = process.env.LOG_DIR || path.join(__dirname, 'logs');
 const AUDIT_TAG = process.env.AUDIT_TAG || 'mcp-unified';
@@ -236,7 +236,7 @@ app.use((req, res, next) => {
         return next();
     }
 
-    const indexPath = path.join(STATIC_DIR, 'index.html');
+    const indexPath = path.resolve(__dirname, STATIC_DIR, 'index.html');
     if (fs.existsSync(indexPath)) {
         return res.sendFile(indexPath);
     }
@@ -275,6 +275,8 @@ const server = app.listen(PORT, HOST, () => {
     log.runtime(`Server started on ${HOST}:${PORT}`);
     log.runtime(`Environment: ${NODE_ENV}`);
     log.runtime(`Static dir: ${STATIC_DIR}`);
+    log.runtime(`Static dir exists: ${fs.existsSync(STATIC_DIR)}`);
+    log.runtime(`Index.html exists: ${fs.existsSync(path.join(STATIC_DIR, 'index.html'))}`);
     log.runtime(`API base: ${API_BASE}`);
     log.runtime(`Log dir: ${LOG_DIR}`);
     log.runtime(`Commit: ${COMMIT_ID}`);
