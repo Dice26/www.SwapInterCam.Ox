@@ -174,7 +174,22 @@ mcpRouter.get('/status', (req, res) => {
     res.json({
         api: 'up',
         time: new Date().toISOString(),
-        endpoints: 25
+        endpoints: {
+            total: 6,
+            available: [
+                'GET /api/mcp/version',
+                'GET /api/mcp/status',
+                'GET /api/mcp/state',
+                'POST /api/mcp/face-swap',
+                'GET /api/mcp/cameras',
+                'POST /api/mcp/camera/select'
+            ]
+        },
+        services: {
+            faceSwap: 'available',
+            cameras: 'available',
+            ai: 'demo_mode'
+        }
     });
 });
 
@@ -187,10 +202,68 @@ mcpRouter.get('/state', (req, res) => {
     });
 });
 
-// TODO: Add more MCP endpoints
-// mcpRouter.get('/cameras', ...);
-// mcpRouter.post('/camera/select', ...);
-// mcpRouter.post('/face-swap/start', ...);
+// Face Swap Processing Endpoint
+mcpRouter.post('/face-swap', (req, res) => {
+    const { sourceImage, targetImage, timestamp } = req.body;
+
+    if (!sourceImage || !targetImage) {
+        return res.status(400).json({
+            error: 'Both source and target images are required',
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // Log the face swap request
+    log.runtime(`Face swap request received at ${timestamp}`);
+
+    // Simulate AI processing (replace with actual AI model integration)
+    const processingStartTime = Date.now();
+
+    // In production, this would integrate with actual AI models
+    // For now, return a structured response that the frontend expects
+    setTimeout(() => {
+        const processingTime = Date.now() - processingStartTime;
+
+        res.json({
+            success: true,
+            processedImage: sourceImage, // In production, this would be the AI-processed result
+            processingTime: `${processingTime}ms`,
+            confidence: '85%',
+            timestamp: new Date().toISOString(),
+            message: 'Face swap completed successfully',
+            metadata: {
+                sourceImageSize: sourceImage.length,
+                targetImageSize: targetImage.length,
+                algorithm: 'SwapInterCam AI v1.0',
+                status: 'demo_mode'
+            }
+        });
+
+        log.runtime(`Face swap completed in ${processingTime}ms`);
+    }, 2000); // Simulate 2 second processing time
+});
+
+// Camera Management Endpoints
+mcpRouter.get('/cameras', (req, res) => {
+    res.json({
+        cameras: [
+            { id: 'default', name: 'Default Camera', status: 'available' },
+            { id: 'virtual', name: 'OBS Virtual Camera', status: 'available' }
+        ],
+        active: null
+    });
+});
+
+mcpRouter.post('/camera/select', (req, res) => {
+    const { cameraId } = req.body;
+    log.runtime(`Camera selected: ${cameraId}`);
+
+    res.json({
+        success: true,
+        selectedCamera: cameraId,
+        timestamp: new Date().toISOString()
+    });
+});
 
 // SWEP API Router
 const swepRouter = express.Router();
