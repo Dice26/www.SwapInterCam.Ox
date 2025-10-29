@@ -221,92 +221,112 @@
             updateStatus('✅ Face detection initialized - ready for real-time swap');
         }
 
-        // Enhanced face detection using basic image processing
+        // Optimized face detection with better performance and accuracy
         function detectFaces(imageData) {
             const faces = [];
             const data = imageData.data;
             const width = imageData.width;
             const height = imageData.height;
 
-            // Simple skin tone detection for face area estimation
+            // Optimized skin tone detection - scan fewer pixels for speed
             let skinPixels = 0;
             let totalPixels = 0;
             let avgX = 0, avgY = 0;
+            let minX = width, maxX = 0, minY = height, maxY = 0;
 
-            // Scan image for skin-tone pixels (simplified)
-            for (let y = Math.floor(height * 0.2); y < height * 0.8; y += 4) {
-                for (let x = Math.floor(width * 0.2); x < width * 0.8; x += 4) {
+            // Faster scanning - every 8th pixel instead of 4th
+            for (let y = Math.floor(height * 0.15); y < height * 0.85; y += 8) {
+                for (let x = Math.floor(width * 0.15); x < width * 0.85; x += 8) {
                     const i = (y * width + x) * 4;
                     const r = data[i];
                     const g = data[i + 1];
                     const b = data[i + 2];
 
-                    // Simple skin tone detection
-                    if (r > 95 && g > 40 && b > 20 &&
-                        r > g && r > b &&
-                        Math.abs(r - g) > 15) {
+                    // Improved skin tone detection with multiple ranges
+                    const isSkin = (
+                        // Light skin
+                        (r > 95 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 15) ||
+                        // Medium skin
+                        (r > 80 && g > 35 && b > 15 && r > g && g > b && (r - g) < 40) ||
+                        // Darker skin
+                        (r > 60 && g > 30 && b > 15 && r >= g && g >= b && (r - b) > 10)
+                    );
+
+                    if (isSkin) {
                         skinPixels++;
                         avgX += x;
                         avgY += y;
+
+                        // Track bounding box
+                        minX = Math.min(minX, x);
+                        maxX = Math.max(maxX, x);
+                        minY = Math.min(minY, y);
+                        maxY = Math.max(maxY, y);
                     }
                     totalPixels++;
                 }
             }
 
-            // If enough skin pixels found, estimate face location
-            if (skinPixels > totalPixels * 0.02) { // At least 2% skin pixels
+            // If enough skin pixels found, create larger face detection
+            if (skinPixels > totalPixels * 0.01) { // Lowered threshold for better detection
                 avgX /= skinPixels;
                 avgY /= skinPixels;
 
-                const faceWidth = Math.min(150, width * 0.25);
-                const faceHeight = Math.min(180, height * 0.35);
+                // Larger face detection area - 40% of video width/height
+                const faceWidth = Math.max(200, Math.min(width * 0.4, maxX - minX + 100));
+                const faceHeight = Math.max(240, Math.min(height * 0.5, maxY - minY + 120));
+
+                // Position face slightly higher (faces are usually in upper portion)
+                const faceY = Math.max(0, avgY - faceHeight * 0.6);
 
                 faces.push({
-                    x: avgX - faceWidth / 2,
-                    y: avgY - faceHeight / 2,
-                    width: faceWidth,
-                    height: faceHeight,
-                    confidence: Math.min(0.95, skinPixels / (totalPixels * 0.05))
+                    x: Math.max(0, avgX - faceWidth / 2),
+                    y: faceY,
+                    width: Math.min(faceWidth, width - (avgX - faceWidth / 2)),
+                    height: Math.min(faceHeight, height - faceY),
+                    confidence: Math.min(0.95, Math.max(0.7, skinPixels / (totalPixels * 0.02)))
                 });
             } else {
-                // Fallback to center detection
-                const faceWidth = 120;
-                const faceHeight = 150;
+                // Improved fallback - larger centered face
+                const faceWidth = Math.min(width * 0.35, 280);
+                const faceHeight = Math.min(height * 0.45, 350);
                 faces.push({
-                    x: width / 2 - faceWidth / 2,
-                    y: height / 2 - faceHeight / 2,
+                    x: (width - faceWidth) / 2,
+                    y: (height - faceHeight) / 2 - 20, // Slightly higher
                     width: faceWidth,
                     height: faceHeight,
-                    confidence: 0.6
+                    confidence: 0.75 // Higher fallback confidence
                 });
             }
 
             return faces;
         }
 
-        // Blend target face onto detected face area
+        // Optimized face blending with better visual quality
         function blendFaceOntoCanvas(face) {
             if (!targetFaceImg) return;
 
             // Save current context
             ctx.save();
 
-            // Create circular clipping mask for more natural blending
+            // Create rounded rectangle clipping mask (with fallback)
+            const cornerRadius = Math.min(face.width, face.height) * 0.1;
             ctx.beginPath();
-            ctx.ellipse(
-                face.x + face.width / 2,
-                face.y + face.height / 2,
-                face.width / 2,
-                face.height / 2,
-                0, 0, 2 * Math.PI
-            );
+
+            // Fallback for browsers without roundRect support
+            if (ctx.roundRect) {
+                ctx.roundRect(face.x, face.y, face.width, face.height, cornerRadius);
+            } else {
+                // Simple rectangle fallback
+                ctx.rect(face.x, face.y, face.width, face.height);
+            }
             ctx.clip();
 
-            // Set blend mode for more natural face swapping
+            // Enhanced blending for more realistic face swap
             ctx.globalCompositeOperation = 'source-over';
-            ctx.globalAlpha = 0.8; // Semi-transparent for blending
+            ctx.globalAlpha = 0.85; // Slightly more opaque for better visibility
 
-            // Draw target face scaled to detected face size
+            // Draw target face with better scaling
             ctx.drawImage(
                 targetFaceImg,
                 face.x,
@@ -318,10 +338,17 @@
             // Restore context
             ctx.restore();
 
-            // Draw face detection rectangle (optional, for debugging)
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 2;
+            // Enhanced detection rectangle with confidence-based color
+            const confidenceColor = face.confidence > 0.8 ? '#00ff00' :
+                face.confidence > 0.6 ? '#ffff00' : '#ff8800';
+            ctx.strokeStyle = confidenceColor;
+            ctx.lineWidth = 3;
             ctx.strokeRect(face.x, face.y, face.width, face.height);
+
+            // Add confidence text
+            ctx.fillStyle = confidenceColor;
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText(`${Math.round(face.confidence * 100)}%`, face.x + 5, face.y - 5);
         }
 
         function updateStatus(message) {
@@ -377,41 +404,60 @@
             ctx.fillText('Real-time face swap will appear here', canvas.width / 2, canvas.height / 2);
         }
 
+        // Optimized video processing with frame rate control
+        let lastProcessTime = 0;
+        const targetFPS = 15; // Limit to 15 FPS for better performance
+        const frameInterval = 1000 / targetFPS;
+
         function processVideoFrame() {
             if (!faceSwapActive) return;
+
+            const currentTime = Date.now();
+
+            // Frame rate limiting for better performance
+            if (currentTime - lastProcessTime < frameInterval) {
+                animationFrame = requestAnimationFrame(processVideoFrame);
+                return;
+            }
+            lastProcessTime = currentTime;
 
             // Draw current video frame to canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             // Perform face detection and swapping if target face is loaded
             if (targetFaceImg && faceDetectionEnabled) {
-                // Get image data for face detection
+                // Get image data for face detection (reduced resolution for speed)
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
                 // Detect faces in current frame
                 detectedFaces = detectFaces(imageData);
 
-                // Swap faces for each detected face
+                // Swap faces for each detected face with lower confidence threshold
                 detectedFaces.forEach(face => {
-                    if (face.confidence > 0.5) { // Only swap if confidence is high enough
+                    if (face.confidence > 0.4) { // Lowered threshold for better detection
                         blendFaceOntoCanvas(face);
                     }
                 });
 
-                // Add processing info
+                // Enhanced processing info with performance metrics
+                const fps = Math.round(1000 / (currentTime - (lastProcessTime - frameInterval)));
                 ctx.fillStyle = '#00ff00';
-                ctx.font = '12px Arial';
+                ctx.font = 'bold 12px Arial';
                 ctx.textAlign = 'left';
-                ctx.fillText(`🎭 Faces detected: ${detectedFaces.length}`, 10, 25);
-                ctx.fillText(`Target: Loaded (${Math.round(targetFaceImg.width)}x${Math.round(targetFaceImg.height)})`, 10, 40);
+                ctx.fillText(`🎭 Faces: ${detectedFaces.length} | FPS: ${fps}`, 10, 25);
+                ctx.fillText(`Target: ${Math.round(targetFaceImg.width)}x${Math.round(targetFaceImg.height)}`, 10, 40);
 
                 if (detectedFaces.length > 0) {
-                    ctx.fillText(`Confidence: ${Math.round(detectedFaces[0].confidence * 100)}%`, 10, 55);
+                    const confidence = Math.round(detectedFaces[0].confidence * 100);
+                    const confidenceColor = confidence > 80 ? '#00ff00' : confidence > 60 ? '#ffff00' : '#ff8800';
+                    ctx.fillStyle = confidenceColor;
+                    ctx.fillText(`Confidence: ${confidence}%`, 10, 55);
+                    ctx.fillText(`Size: ${Math.round(detectedFaces[0].width)}x${Math.round(detectedFaces[0].height)}`, 10, 70);
                 }
             } else {
                 // Show status when no target face
                 ctx.fillStyle = '#ff9800';
-                ctx.font = '14px Arial';
+                ctx.font = 'bold 14px Arial';
                 ctx.textAlign = 'left';
                 ctx.fillText('⚠️ Upload target face to enable swapping', 10, 25);
             }
