@@ -732,7 +732,66 @@
                 <p style="opacity: 0.7; font-size: 0.9rem;">Updated: ${timestamp}</p>
                 <button class="btn" onclick="openVirtualCameraGuide()" style="background: #4CAF50; margin: 5px;">📖 Setup Guide</button>
                 <button class="btn" onclick="downloadOBS()" style="background: #2196F3; margin: 5px;">⬇️ Download OBS</button>
+                <button class="btn" onclick="fixWhatsAppCamera()" style="background: #FF9800; margin: 5px;">🔧 Fix WhatsApp</button>
+                <button class="btn" onclick="openWhatsAppWeb()" style="background: #25D366; margin: 5px;">🌐 WhatsApp Web</button>
             `;
+        }
+
+        // WhatsApp camera detection fixes
+        function fixWhatsAppCamera() {
+            const fixInstructions = `
+🔧 WhatsApp Camera Detection Fix:
+
+❌ PROBLEM: WhatsApp can't see OBS Virtual Camera
+
+✅ QUICK FIXES:
+
+1. 🔐 ENABLE CAMERA PERMISSIONS:
+   • Press Win + I → Privacy & Security → Camera
+   • Turn ON "Let apps access your camera"
+   • Turn ON "Let desktop apps access your camera"
+
+2. 📱 RESTART WHATSAPP:
+   • Close WhatsApp completely
+   • Restart WhatsApp Desktop
+   • Check camera settings
+
+3. 🎥 CHECK OBS VIRTUAL CAMERA:
+   • Make sure "Start Virtual Camera" is ON in OBS
+   • Wait 10 seconds after starting
+   • Try refreshing WhatsApp
+
+4. 🌐 USE WHATSAPP WEB (RECOMMENDED):
+   • WhatsApp Web works better with virtual cameras
+   • Click "WhatsApp Web" button below
+   • More reliable than Desktop app
+
+💡 TIP: WhatsApp Web has better virtual camera support!
+            `;
+
+            alert(fixInstructions);
+            updateVirtualCameraStatus('🔧 WhatsApp camera fix instructions displayed - Try WhatsApp Web for best results');
+        }
+
+        function openWhatsAppWeb() {
+            // Open WhatsApp Web in new tab
+            window.open('https://web.whatsapp.com', '_blank');
+            updateVirtualCameraStatus('🌐 WhatsApp Web opened - Use this for better virtual camera support');
+
+            // Show additional instructions
+            setTimeout(() => {
+                alert(`
+🌐 WhatsApp Web Instructions:
+
+1. ✅ WhatsApp Web is now open in new tab
+2. 📱 Scan QR code with your phone
+3. 📹 Start a video call
+4. 🎥 Click camera icon → Select "OBS Virtual Camera"
+5. 🎭 Your face swap will appear!
+
+💡 WhatsApp Web works much better than Desktop app for virtual cameras!
+                `);
+            }, 2000);
         }
 
         function processDemoVideoFrame() {
