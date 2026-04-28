@@ -1,0 +1,19 @@
+{
+  "name": "SwapInterCam Logo",
+  "path": "assets/logos/swapintercam-logo.png",
+  "size": 527817,
+  "sizeKB": 515,
+  "lastModified": "2025-07-30T02:31:08.000Z",
+  "imported": "2025-08-14T22:28:36.955Z",
+  "variants": [
+    "assets/logos/variants/swapintercam-logo-header.png",
+    "assets/logos/variants/swapintercam-logo-watermark.png",
+    "assets/logos/variants/swapintercam-logo-icon.png"
+  ],
+  "usage": {
+    "adminDashboard": "renderer/admin-dashboard.html",
+    "css": "assets/branding/brand-colors.css",
+    "watermark": "CSS background-image",
+    "icon": "Application icon (via asset manager)"
+  }
+}

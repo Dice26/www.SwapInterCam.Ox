@@ -1,0 +1,30 @@
+{
+  "company": {
+    "name": "SwapInterCam.ox",
+    "tagline": "Professional AI-Powered Face Swapping & Chat Integration",
+    "description": "Advanced real-time face swapping technology with multi-platform chat integration",
+    "website": "https://swapintercam.ox",
+    "domain": "swapintercam.ox"
+  },
+  "contact": {
+    "email": "info@swapintercam.ox",
+    "support": "support@swapintercam.ox",
+    "business": "business@swapintercam.ox",
+    "technical": "tech@swapintercam.ox",
+    "phone": "+1 (555) SWAP-CAM",
+    "address": "SwapInterCam Technologies, Digital Innovation Hub"
+  },
+  "social": {
+    "twitter": "@SwapInterCamOx",
+    "linkedin": "company/swapintercam-ox",
+    "github": "swapintercam-ox",
+    "youtube": "SwapInterCamOfficial"
+  },
+  "branding": {
+    "primaryColor": "#667eea",
+    "secondaryColor": "#764ba2",
+    "accentColor": "#4CAF50",
+    "backgroundColor": "#1a1a1a",
+    "textColor": "#ffffff"
+  }
+}

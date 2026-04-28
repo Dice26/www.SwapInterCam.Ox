@@ -11,8 +11,6 @@
 
 const path = require('path');
 const fs = require('fs');
-const http = require('http');
-const WebSocket = require('ws');
 const express = require('express');
 const app = express();
 
@@ -40,11 +38,11 @@ const log = {
             tag: AUDIT_TAG,
             ...data
         }) + '\n';
-        fs.appendFile(path.join(LOG_DIR, 'access.log'), line, () => { });
+        fs.appendFile(path.join(LOG_DIR, 'access.log'), line, () => {});
     },
     runtime: (message) => {
         const line = `[${new Date().toISOString()}] ${AUDIT_TAG} ${message}\n`;
-        fs.appendFile(path.join(LOG_DIR, 'runtime.log'), line, () => { });
+        fs.appendFile(path.join(LOG_DIR, 'runtime.log'), line, () => {});
         console.log(line.trim());
     },
     error: (message, error) => {
@@ -55,7 +53,7 @@ const log = {
             error: error?.message || error,
             stack: error?.stack
         }) + '\n';
-        fs.appendFile(path.join(LOG_DIR, 'error.log'), line, () => { });
+        fs.appendFile(path.join(LOG_DIR, 'error.log'), line, () => {});
         console.error(line.trim());
     }
 };
@@ -65,7 +63,7 @@ const log = {
 // ============================================
 app.use((req, res, next) => {
     const startTime = Date.now();
-
+    
     // Log after response
     res.on('finish', () => {
         log.access({
@@ -77,7 +75,7 @@ app.use((req, res, next) => {
             ua: req.headers['user-agent'] || ''
         });
     });
-
+    
     next();
 });
 
@@ -88,12 +86,12 @@ app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
-
+    
     // HSTS only in production with HTTPS
     if (NODE_ENV === 'production') {
         res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
-
+    
     next();
 });
 
@@ -112,7 +110,7 @@ app.use(express.static(STATIC_DIR, {
     setHeaders: (res, filePath) => {
         const ext = path.extname(filePath).toLowerCase();
         const immutable = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.woff', '.woff2'];
-
+        
         if (immutable.includes(ext)) {
             res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
         } else if (ext === '.html') {
@@ -222,12 +220,12 @@ app.use((req, res, next) => {
     if (req.path.startsWith(API_BASE)) {
         return next();
     }
-
+    
     const indexPath = path.join(STATIC_DIR, 'index.html');
     if (fs.existsSync(indexPath)) {
         return res.sendFile(indexPath);
     }
-
+    
     next();
 });
 
@@ -236,7 +234,7 @@ app.use((req, res, next) => {
 // ============================================
 app.use((err, req, res, next) => {
     log.error('Unhandled error', err);
-
+    
     res.status(err.status || 500).json({
         error: NODE_ENV === 'production' ? 'Internal server error' : err.message,
         path: req.path,
@@ -256,50 +254,15 @@ app.use((req, res) => {
 });
 
 // ============================================
-// Start Server + WebSocket
+// Start Server
 // ============================================
-const server = http.createServer(app);
-
-// WebSocket server for real-time updates
-const wss = new WebSocket.Server({ server });
-const wsClients = new Set();
-
-wss.on('connection', (ws) => {
-    log.runtime('WebSocket client connected');
-    wsClients.add(ws);
-
-    // Send welcome/status message
-    ws.send(JSON.stringify({ type: 'connected', status: 'ok', time: new Date().toISOString() }));
-
-    ws.on('close', () => {
-        wsClients.delete(ws);
-        log.runtime('WebSocket client disconnected');
-    });
-
-    ws.on('error', (err) => {
-        log.error('WebSocket client error', err);
-        wsClients.delete(ws);
-    });
-});
-
-// Expose broadcast helper for future use
-app.locals.broadcast = (data) => {
-    const msg = JSON.stringify(data);
-    wsClients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(msg);
-        }
-    });
-};
-
-server.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
     log.runtime(`Server started on ${HOST}:${PORT}`);
     log.runtime(`Environment: ${NODE_ENV}`);
     log.runtime(`Static dir: ${STATIC_DIR}`);
     log.runtime(`API base: ${API_BASE}`);
     log.runtime(`Log dir: ${LOG_DIR}`);
     log.runtime(`Commit: ${COMMIT_ID}`);
-    log.runtime(`WebSocket: ws://${HOST}:${PORT}`);
 });
 
 // ============================================

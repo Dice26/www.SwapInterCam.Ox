@@ -1,0 +1,28 @@
+{
+  "projectName": "SwapInterCam.ox Web Platform",
+  "version": "1.0.0",
+  "mcpServer": {
+    "path": "src/backend/server.js",
+    "port": 8001,
+    "role": "Single Source of Truth"
+  },
+  "webServer": {
+    "path": "web-production-server.js",
+    "port": 3000,
+    "role": "Web Interface Server"
+  },
+  "deployment": {
+    "domain": "swapintercam.ox",
+    "subdomain": "app.swapintercam.ox",
+    "ssl": true,
+    "cdn": true
+  },
+  "features": [
+    "Face Swap Studio",
+    "Multi-Platform Chat Integration",
+    "Real-time MCP Server Integration",
+    "System Monitoring Dashboard",
+    "Camera Management",
+    "Action Execution Center"
+  ]
+}
