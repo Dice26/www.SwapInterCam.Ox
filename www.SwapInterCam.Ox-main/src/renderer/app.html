@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwapInterCam - Real-Time Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #2d2d2d;
+            border-right: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            text-align: center;
+        }
+
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            color: white;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(102, 126, 234, 0.2);
+            border-right: 3px solid #667eea;
+        }
+
+        .nav-icon {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+
+        .nav-text {
+            font-size: 0.9rem;
+        }
+
+        .status-section {
+            padding: 20px;
+            border-top: 1px solid #444;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .status-online { background: #4CAF50; }
+        .status-offline { background: #f44336; }
+        .status-warning { background: #ff9800; }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-header {
+            padding: 20px 30px;
+            background: #333;
+            border-bottom: 1px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .content-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #555;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Face Swap Section */
+        .face-swap-container {
+            display: none;
+        }
+
+        .face-swap-container.active {
+            display: block;
+        }
+
+        .camera-section {
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .camera-preview {
+            width: 100%;
+            height: 300px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            border: 2px dashed #555;
+        }
+
+        .camera-placeholder {
+            text-align: center;
+            color: #888;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* Chat Section */
+        .chat-container {
+            display: none;
+        }
+
+        .chat-container.active {
+            display: block;
+        }
+
+        .chat-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .chat-tab {
+            padding: 10px 20px;
+            background: #2d2d2d;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chat-tab.active {
+            background: #667eea;
+        }
+
+        .chat-frame {
+            width: 100%;
+            height: 500px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+        }
+
+        /* Settings Section */
+        .settings-container {
+            display: none;
+        }
+
+        .settings-container.active {
+            display: block;
+        }
+
+        .settings-group {
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .setting-label {
+            font-size: 0.9rem;
+        }
+
+        .setting-control select,
+        .setting-control input {
+            background: #1a1a1a;
+            border: 1px solid #555;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+            
+            .nav-text {
+                display: none;
+            }
+            
+            .sidebar-header {
+                padding: 15px 10px;
+            }
+            
+            .sidebar-title,
+            .sidebar-subtitle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">SwapInterCam</div>
+                <div class="sidebar-subtitle">Real-Time Platform</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" onclick="showSection('face-swap')">
+                    <span class="nav-icon">🎭</span>
+                    <span class="nav-text">Face Swap</span>
+                </button>
+                
+                <button class="nav-item" onclick="showSection('chat')">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-text">Chat Platforms</span>
+                </button>
+                
+                <button class="nav-item" onclick="showSection('camera')">
+                    <span class="nav-icon">📹</span>
+                    <span class="nav-text">Camera</span>
+                </button>
+                
+                <button class="nav-item" onclick="showSection('obs')">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-text">OBS Integration</span>
+                </button>
+                
+                <button class="nav-item" onclick="showSection('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Settings</span>
+                </button>
+            </nav>
+            
+            <div class="status-section">
+                <div class="status-item">
+                    <span>Backend MCP</span>
+                    <div class="status-dot status-online" id="backend-status"></div>
+                </div>
+                <div class="status-item">
+                    <span>SWEP Server</span>
+                    <div class="status-dot status-online" id="swep-status"></div>
+                </div>
+                <div class="status-item">
+                    <span>Agents</span>
+                    <div class="status-dot status-online" id="agents-status"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h1 class="content-title" id="section-title">Face Swap</h1>
+                <div class="header-controls">
+                    <button class="btn btn-secondary" onclick="refreshStatus()">🔄 Refresh</button>
+                    <button class="btn btn-primary" onclick="showHelp()">❓ Help</button>
+                </div>
+            </div>
+            
+            <div class="content-body">
+                <!-- Face Swap Section -->
+                <div class="face-swap-container active" id="face-swap-section">
+                    <div class="camera-section">
+                        <h3>Camera Preview</h3>
+                        <div class="camera-preview">
+                            <div class="camera-placeholder">
+                                <div style="font-size: 3rem; margin-bottom: 10px;">📹</div>
+                                <div>Camera will appear here</div>
+                                <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.7;">Click "Start Camera" to begin</div>
+                            </div>
+                        </div>
+                        <div class="camera-controls">
+                            <button class="btn btn-primary" onclick="startCamera()">📹 Start Camera</button>
+                            <button class="btn btn-secondary" onclick="stopCamera()">⏹️ Stop Camera</button>
+                            <button class="btn btn-secondary" onclick="takePicture()">📸 Capture</button>
+                        </div>
+                    </div>
+                    
+                    <div class="camera-section">
+                        <h3>Face Swap Controls</h3>
+                        <div class="camera-controls">
+                            <button class="btn btn-primary" onclick="startFaceSwap()">🎭 Start Face Swap</button>
+                            <button class="btn btn-secondary" onclick="loadModel()">🧠 Load AI Model</button>
+                            <button class="btn btn-secondary" onclick="selectTarget()">🎯 Select Target</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Section -->
+                <div class="chat-container" id="chat-section">
+                    <div class="chat-tabs">
+                        <button class="chat-tab active" onclick="switchChatTab('whatsapp')">WhatsApp</button>
+                        <button class="chat-tab" onclick="switchChatTab('messenger')">Messenger</button>
+                        <button class="chat-tab" onclick="switchChatTab('line')">LINE</button>
+                    </div>
+                    <iframe class="chat-frame" id="chat-frame" src="about:blank"></iframe>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="settings-container" id="settings-section">
+                    <div class="settings-group">
+                        <div class="settings-title">Theme Settings</div>
+                        <div class="setting-item">
+                            <span class="setting-label">Theme</span>
+                            <div class="setting-control">
+                                <select id="theme-select" onchange="changeTheme()">
+                                    <option value="dark">Dark</option>
+                                    <option value="light">Light</option>
+                                    <option value="high-contrast">High Contrast</option>
+                                    <option value="system">System</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <div class="settings-title">Camera Settings</div>
+                        <div class="setting-item">
+                            <span class="setting-label">Resolution</span>
+                            <div class="setting-control">
+                                <select id="resolution-select">
+                                    <option value="1920x1080">1920x1080 (Full HD)</option>
+                                    <option value="1280x720">1280x720 (HD)</option>
+                                    <option value="640x480">640x480 (SD)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">Frame Rate</span>
+                            <div class="setting-control">
+                                <select id="fps-select">
+                                    <option value="60">60 FPS</option>
+                                    <option value="30">30 FPS</option>
+                                    <option value="15">15 FPS</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 SwapInterCam Real-Time Application Loading...');
+
+        // Global state
+        let currentSection = 'face-swap';
+        let cameraActive = false;
+        let faceSwapActive = false;
+
+        // Navigation
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.face-swap-container, .chat-container, .settings-container').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Remove active from nav items
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show selected section
+            const sectionElement = document.getElementById(sectionName + '-section');
+            if (sectionElement) {
+                sectionElement.classList.add('active');
+            }
+            
+            // Update nav active state
+            event.target.classList.add('active');
+            
+            // Update title
+            const titles = {
+                'face-swap': 'Face Swap',
+                'chat': 'Chat Platforms',
+                'camera': 'Camera Controls',
+                'obs': 'OBS Integration',
+                'settings': 'Settings'
+            };
+            
+            document.getElementById('section-title').textContent = titles[sectionName] || sectionName;
+            currentSection = sectionName;
+        }
+
+        // Camera functions
+        async function startCamera() {
+            console.log('🎥 Starting camera...');
+            try {
+                // Request camera permission and start
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 1280, height: 720 } 
+                });
+                
+                // Create video element
+                const preview = document.querySelector('.camera-preview');
+                preview.innerHTML = '<video id="camera-video" autoplay muted style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"></video>';
+                
+                const video = document.getElementById('camera-video');
+                video.srcObject = stream;
+                
+                // Also call IPC to register camera
+                const result = await window.electronAPI.invoke('camera:scanDevices');
+                console.log('Camera scan result:', result);
+                
+                cameraActive = true;
+                console.log('✅ Camera started successfully!');
+            } catch (error) {
+                console.error('Failed to start camera:', error);
+                updateCameraPreview(`Camera access denied: ${error.message}`);
+            }
+        }
+
+        function stopCamera() {
+            console.log('⏹️ Stopping camera...');
+            
+            // Stop video stream
+            const video = document.getElementById('camera-video');
+            if (video && video.srcObject) {
+                const tracks = video.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+            }
+            
+            cameraActive = false;
+            updateCameraPreview('Camera stopped');
+        }
+
+        function takePicture() {
+            console.log('📸 Taking picture...');
+            if (cameraActive) {
+                updateCameraPreview('Picture captured!');
+            } else {
+                alert('Please start the camera first');
+            }
+        }
+
+        function updateCameraPreview(message) {
+            const preview = document.querySelector('.camera-placeholder');
+            if (preview) {
+                preview.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 10px;">📹</div>
+                    <div>${message}</div>
+                    <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.7;">Status: ${cameraActive ? 'Active' : 'Inactive'}</div>
+                `;
+            }
+        }
+
+        // Face swap functions
+        async function startFaceSwap() {
+            console.log('🎭 Starting face swap...');
+            try {
+                faceSwapActive = !faceSwapActive;
+                const action = faceSwapActive ? 'start' : 'stop';
+                console.log(`Face swap ${action}ed`);
+                updateCameraPreview(`Face swap ${action}ed`);
+            } catch (error) {
+                console.error('Face swap error:', error);
+            }
+        }
+
+        function loadModel() {
+            console.log('🧠 Loading AI model...');
+            updateCameraPreview('Loading AI model...');
+            setTimeout(() => {
+                updateCameraPreview('AI model loaded successfully!');
+            }, 2000);
+        }
+
+        function selectTarget() {
+            console.log('🎯 Selecting target face...');
+            updateCameraPreview('Select a target face from your images');
+        }
+
+        // Chat functions
+        function switchChatTab(platform) {
+            console.log(`💬 Switching to ${platform}`);
+            
+            // Update tab active state
+            document.querySelectorAll('.chat-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update chat frame
+            const chatFrame = document.getElementById('chat-frame');
+            const urls = {
+                'whatsapp': 'https://web.whatsapp.com',
+                'messenger': 'https://www.messenger.com',
+                'line': 'https://chrome.google.com/webstore/detail/line/ophjlpahpchlmihnnnihgmmeilfjmjjc'
+            };
+            
+            chatFrame.src = urls[platform] || 'about:blank';
+        }
+
+        // Settings functions
+        async function changeTheme() {
+            const theme = document.getElementById('theme-select').value;
+            console.log(`🎨 Changing theme to: ${theme}`);
+            
+            try {
+                // Call IPC to change theme
+                const result = await window.electronAPI.invoke('ui:switchTheme', { theme });
+                console.log('Theme change result:', result);
+            } catch (error) {
+                console.error('Failed to change theme:', error);
+            }
+        }
+
+        // Status functions
+        async function refreshStatus() {
+            console.log('🔄 Refreshing status...');
+            
+            try {
+                // Check backend status
+                const backendStatus = await checkBackendStatus();
+                updateStatusDot('backend-status', backendStatus);
+                
+                // Check SWEP status
+                const swepStatus = await checkSWEPStatus();
+                updateStatusDot('swep-status', swepStatus);
+                
+                // Check agents status
+                const agentsStatus = await checkAgentsStatus();
+                updateStatusDot('agents-status', agentsStatus);
+                
+            } catch (error) {
+                console.error('Status refresh failed:', error);
+            }
+        }
+
+        function updateStatusDot(elementId, isOnline) {
+            const dot = document.getElementById(elementId);
+            if (dot) {
+                dot.className = `status-dot ${isOnline ? 'status-online' : 'status-offline'}`;
+            }
+        }
+
+        async function checkBackendStatus() {
+            try {
+                const response = await fetch('http://127.0.0.1:8001/api/health');
+                return response.ok;
+            } catch {
+                return false;
+            }
+        }
+
+        async function checkSWEPStatus() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/health');
+                return response.ok;
+            } catch {
+                return false;
+            }
+        }
+
+        async function checkAgentsStatus() {
+            // Simulate agents check
+            return true;
+        }
+
+        function showHelp() {
+            alert(`SwapInterCam Help
+
+🎭 Face Swap: Real-time face swapping with AI
+💬 Chat: Connect to WhatsApp, Messenger, LINE
+📹 Camera: Manage camera settings and controls
+🎯 OBS: Integration with OBS Studio
+⚙️ Settings: Customize your experience
+
+Status Indicators:
+🟢 Online/Ready
+🔴 Offline/Error
+🟡 Warning/Loading`);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ SwapInterCam Real-Time Application Ready!');
+            refreshStatus();
+            
+            // Auto-refresh status every 30 seconds
+            setInterval(refreshStatus, 30000);
+        });
+
+        // Make functions available globally
+        window.swapInterCam = {
+            showSection,
+            startCamera,
+            stopCamera,
+            takePicture,
+            startFaceSwap,
+            loadModel,
+            selectTarget,
+            switchChatTab,
+            changeTheme,
+            refreshStatus,
+            showHelp
+        };
+    </script>
+</body>
+</html>

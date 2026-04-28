@@ -1,0 +1,86 @@
+:root {
+  /* Primary Brand Colors */
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+  
+  /* Background Colors */
+  --background-dark: #1a1a1a;
+  --background-medium: #2d2d2d;
+  --background-light: #f9f9f9;
+  
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-muted: #999999;
+  --text-dark: #333333;
+  
+  /* Accent Colors */
+  --accent-color: #667eea;
+  --success-color: #27ae60;
+  --warning-color: #f39c12;
+  --error-color: #e74c3c;
+  
+  /* Border and Shadow */
+  --border-color: #444444;
+  --border-light: #e0e0e0;
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* SwapInterCam Brand Classes */
+.swapintercam-gradient {
+  background: var(--primary-gradient);
+}
+
+.swapintercam-primary {
+  color: var(--primary-color);
+}
+
+.swapintercam-secondary {
+  color: var(--secondary-color);
+}
+
+/* SwapInterCam Logo Utilities */
+.swapintercam-logo-bg {
+  background-image: url('../logos/swapintercam-logo.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.swapintercam-watermark {
+  background-image: url('../logos/swapintercam-logo.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 240px;
+  opacity: 0.04;
+}
+
+/* SwapInterCam Logo Utilities */
+.swapintercam-logo-bg {
+  background-image: url('../logos/swapintercam-logo.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.swapintercam-watermark {
+  background-image: url('../logos/swapintercam-logo.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 240px;
+  opacity: 0.04;
+}

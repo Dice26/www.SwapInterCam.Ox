@@ -1,0 +1,95 @@
+{
+  "timestamp": 1760584507244,
+  "version": "1.0.0",
+  "processId": 17160,
+  "uptime": 3541.1712242,
+  "state": {
+    "cameras": {
+      "devices": [
+        {
+          "id": "integrated-camera",
+          "name": "Integrated Camera",
+          "type": "built-in",
+          "status": "available",
+          "capabilities": {
+            "maxWidth": 1920,
+            "maxHeight": 1080,
+            "frameRate": 30
+          }
+        }
+      ],
+      "activeStreams": 0,
+      "permissions": "unknown",
+      "issues": [
+        {
+          "message": "Camera devices are available but no streams are active.",
+          "severity": "warning",
+          "timestamp": 1760584457111,
+          "id": "e7a8cx249"
+        },
+        {
+          "message": "No active camera streams detected",
+          "severity": "warning",
+          "timestamp": 1760584459038,
+          "id": "zrtyy5x27"
+        }
+      ],
+      "lastScan": 1760584459027,
+      "preferredDevice": null
+    },
+    "obs": {
+      "connected": false,
+      "virtualCamera": false,
+      "currentScene": null,
+      "availableScenes": [],
+      "issues": [],
+      "lastConnection": null
+    },
+    "windows": {
+      "mainWindow": {
+        "visible": false,
+        "focused": false,
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "size": {
+          "width": 1400,
+          "height": 900
+        }
+      },
+      "issues": [
+        {
+          "message": "The main application window is currently hidden.",
+          "severity": "info",
+          "timestamp": 1760584507182,
+          "id": "o38pjbtsm"
+        }
+      ]
+    },
+    "recovery": {
+      "activeOperations": [],
+      "lastRun": {},
+      "statistics": {
+        "totalRuns": 0,
+        "successfulRuns": 0,
+        "failedRuns": 0
+      }
+    },
+    "system": {
+      "startTime": 1760580966209,
+      "version": "1.0.0",
+      "platform": "win32",
+      "nodeVersion": "v24.10.0"
+    },
+    "health": "warning",
+    "lastUpdate": 1760584507182,
+    "changeCount": 2063
+  },
+  "metadata": {
+    "savedAt": "2025-10-16T03:15:07.244Z",
+    "nodeVersion": "v24.10.0",
+    "platform": "win32",
+    "arch": "x64"
+  }
+}

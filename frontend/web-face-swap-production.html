@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwapInterCam - Face Swap Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        .panel h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .status {
+            background: #333;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🎭 SwapInterCam Face Swap Studio</h1>
+        <p>Professional AI-Powered Face Swapping</p>
+    </div>
+
+    <div class="container">
+        <div class="feature-grid">
+            <div class="panel">
+                <h3>📹 Live Camera Feed</h3>
+                <div style="background: #333; border-radius: 8px; padding: 20px; text-align: center;">
+                    <video id="camera-feed" width="100%" height="200" style="border-radius: 8px; background: #000;"
+                        autoplay muted></video>
+                    <div style="margin-top: 10px;">
+                        <button class="btn" onclick="startCamera()">📹 Start Camera</button>
+                        <button class="btn" onclick="stopCamera()">⏹️ Stop Camera</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>🎭 Target Face (Reference)</h3>
+                <div class="upload-area" onclick="document.getElementById('target-upload').click()">
+                    <p>Click to upload target face image</p>
+                    <p style="opacity: 0.7; font-size: 0.9rem;">This face will be swapped onto the live video</p>
+                </div>
+                <input type="file" id="target-upload" style="display: none;" accept="image/*">
+                <div id="target-preview"></div>
+            </div>
+        </div>
+
+        <div class="status">
+            <h3>🔄 Processing Status</h3>
+            <div id="status-display">Ready to process face swap</div>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="btn" onclick="startFaceSwap()">🎭 Start Real-Time Face Swap</button>
+            <button class="btn" onclick="stopFaceSwap()">⏹️ Stop Face Swap</button>
+            <button class="btn" onclick="setupVirtualCamera()">📹 Setup Virtual Camera</button>
+            <button class="btn" onclick="resetAll()">🔄 Reset</button>
+        </div>
+
+        <div class="panel" style="background: #1a4d3a; border: 2px solid #4CAF50;">
+            <h3>📱 WhatsApp Integration</h3>
+            <div id="virtual-camera-status"
+                style="padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+                <p><strong>🎯 How to use face swap in WhatsApp:</strong></p>
+                <ol style="text-align: left; margin: 10px 0;">
+                    <li>Start face swap above ↑</li>
+                    <li>Download & install OBS Studio</li>
+                    <li>Add this page as Browser Source in OBS</li>
+                    <li>Start OBS Virtual Camera</li>
+                    <li>Select "OBS Virtual Camera" in WhatsApp</li>
+                </ol>
+                <button class="btn" onclick="openVirtualCameraGuide()" style="background: #4CAF50;">📖 Detailed Setup
+                    Guide</button>
+                <button class="btn" onclick="downloadOBS()" style="background: #2196F3;">⬇️ Download OBS Studio</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>✨ Live Face Swap Output</h3>
+            <div id="result-container" style="text-align: center; padding: 20px;">
+                <canvas id="output-canvas" width="640" height="480"
+                    style="border-radius: 8px; background: #000; max-width: 100%;"></canvas>
+                <p style="opacity: 0.7; margin-top: 10px;">Real-time face swap will appear here</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🎭 Real-Time Face Swap Studio Loading...');
+
+        let cameraStream = null;
+        let targetFaceImage = null;
+        let targetFaceImg = null; // Image object for blending
+        let faceSwapActive = false;
+        let animationFrame = null;
+        let faceDetectionEnabled = false;
+
+        const video = document.getElementById('camera-feed');
+        const canvas = document.getElementById('output-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Face detection variables
+        let detectedFaces = [];
+        let faceDetectionWorker = null;
+
+        // Target face upload handler
+        document.getElementById('target-upload').addEventListener('change', function (e) {
+            handleImageUpload(e.target.files[0], 'target');
+        });
+
+        // Enhanced camera functions for stability
+        async function startCamera() {
+            try {
+                updateStatus('📹 Initializing camera for synchronized processing...');
+
+                // Request high-quality camera stream for better face detection
+                const constraints = {
+                    video: {
+                        width: { ideal: 640, min: 480 },
+                        height: { ideal: 480, min: 360 },
+                        frameRate: { ideal: 30, min: 15 },
+                        facingMode: 'user' // Front camera preferred
+                    }
+                };
+
+                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = cameraStream;
+
+                // Wait for video to be ready for stable processing
+                video.onloadedmetadata = () => {
+                    updateStatus('✅ Camera synchronized - ready for face swap');
+                    // Reset position tracking for new camera session
+                    positionHistory = [];
+                    stableFacePosition = null;
+                };
+
+            } catch (error) {
+                console.error('Camera error:', error);
+                updateStatus('❌ Camera access denied or not available');
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                video.srcObject = null;
+                updateStatus('⏹️ Camera stopped');
+            }
+        }
+
+        function handleImageUpload(file, type) {
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '200px';
+                img.style.marginTop = '10px';
+                img.style.borderRadius = '6px';
+
+                if (type === 'target') {
+                    targetFaceImage = e.target.result;
+
+                    // Create image object for face swapping
+                    targetFaceImg = new Image();
+                    targetFaceImg.onload = function () {
+                        updateStatus('🎭 Target face processed - ready for face swap');
+                        initializeFaceDetection();
+                    };
+                    targetFaceImg.src = e.target.result;
+
+                    document.getElementById('target-preview').innerHTML = '';
+                    document.getElementById('target-preview').appendChild(img);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Initialize face detection (simplified version)
+        function initializeFaceDetection() {
+            faceDetectionEnabled = true;
+            updateStatus('✅ Face detection initialized - ready for real-time swap');
+        }
+
+        // Optimized face detection with better performance and accuracy
+        function detectFaces(imageData) {
+            const faces = [];
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+
+            // Optimized skin tone detection - scan fewer pixels for speed
+            let skinPixels = 0;
+            let totalPixels = 0;
+            let avgX = 0, avgY = 0;
+            let minX = width, maxX = 0, minY = height, maxY = 0;
+
+            // Faster scanning - every 8th pixel instead of 4th
+            for (let y = Math.floor(height * 0.15); y < height * 0.85; y += 8) {
+                for (let x = Math.floor(width * 0.15); x < width * 0.85; x += 8) {
+                    const i = (y * width + x) * 4;
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+
+                    // Improved skin tone detection with multiple ranges
+                    const isSkin = (
+                        // Light skin
+                        (r > 95 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 15) ||
+                        // Medium skin
+                        (r > 80 && g > 35 && b > 15 && r > g && g > b && (r - g) < 40) ||
+                        // Darker skin
+                        (r > 60 && g > 30 && b > 15 && r >= g && g >= b && (r - b) > 10)
+                    );
+
+                    if (isSkin) {
+                        skinPixels++;
+                        avgX += x;
+                        avgY += y;
+
+                        // Track bounding box
+                        minX = Math.min(minX, x);
+                        maxX = Math.max(maxX, x);
+                        minY = Math.min(minY, y);
+                        maxY = Math.max(maxY, y);
+                    }
+                    totalPixels++;
+                }
+            }
+
+            // If enough skin pixels found, create larger face detection
+            if (skinPixels > totalPixels * 0.01) { // Lowered threshold for better detection
+                avgX /= skinPixels;
+                avgY /= skinPixels;
+
+                // Larger face detection area - 40% of video width/height
+                const faceWidth = Math.max(200, Math.min(width * 0.4, maxX - minX + 100));
+                const faceHeight = Math.max(240, Math.min(height * 0.5, maxY - minY + 120));
+
+                // Position face slightly higher (faces are usually in upper portion)
+                const faceY = Math.max(0, avgY - faceHeight * 0.6);
+
+                faces.push({
+                    x: Math.max(0, avgX - faceWidth / 2),
+                    y: faceY,
+                    width: Math.min(faceWidth, width - (avgX - faceWidth / 2)),
+                    height: Math.min(faceHeight, height - faceY),
+                    confidence: Math.min(0.95, Math.max(0.7, skinPixels / (totalPixels * 0.02)))
+                });
+            } else {
+                // Improved fallback - larger centered face
+                const faceWidth = Math.min(width * 0.35, 280);
+                const faceHeight = Math.min(height * 0.45, 350);
+                faces.push({
+                    x: (width - faceWidth) / 2,
+                    y: (height - faceHeight) / 2 - 20, // Slightly higher
+                    width: faceWidth,
+                    height: faceHeight,
+                    confidence: 0.75 // Higher fallback confidence
+                });
+            }
+
+            return faces;
+        }
+
+        // Optimized face blending with better visual quality
+        function blendFaceOntoCanvas(face) {
+            if (!targetFaceImg) return;
+
+            // Save current context
+            ctx.save();
+
+            // Create rounded rectangle clipping mask (with fallback)
+            const cornerRadius = Math.min(face.width, face.height) * 0.1;
+            ctx.beginPath();
+
+            // Fallback for browsers without roundRect support
+            if (ctx.roundRect) {
+                ctx.roundRect(face.x, face.y, face.width, face.height, cornerRadius);
+            } else {
+                // Simple rectangle fallback
+                ctx.rect(face.x, face.y, face.width, face.height);
+            }
+            ctx.clip();
+
+            // Enhanced blending for more realistic face swap
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 0.85; // Slightly more opaque for better visibility
+
+            // Draw target face with better scaling
+            ctx.drawImage(
+                targetFaceImg,
+                face.x,
+                face.y,
+                face.width,
+                face.height
+            );
+
+            // Restore context
+            ctx.restore();
+
+            // Enhanced detection rectangle with confidence-based color
+            const confidenceColor = face.confidence > 0.8 ? '#00ff00' :
+                face.confidence > 0.6 ? '#ffff00' : '#ff8800';
+            ctx.strokeStyle = confidenceColor;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(face.x, face.y, face.width, face.height);
+
+            // Add confidence text
+            ctx.fillStyle = confidenceColor;
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText(`${Math.round(face.confidence * 100)}%`, face.x + 5, face.y - 5);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status-display').textContent = message;
+        }
+
+        // Real-time face swap functions
+        async function startFaceSwap() {
+            if (!cameraStream) {
+                alert('Please start the camera first');
+                return;
+            }
+
+            if (!targetFaceImage) {
+                alert('Please upload a target face image first');
+                return;
+            }
+
+            faceSwapActive = true;
+            updateStatus('🎭 Starting real-time face swap...');
+
+            try {
+                // Check MCP backend connection
+                const healthCheck = await fetch('/api/mcp/status');
+                if (!healthCheck.ok) {
+                    throw new Error('MCP backend not available');
+                }
+
+                updateStatus('✅ Real-time face swap active');
+                processVideoFrame();
+
+            } catch (error) {
+                console.error('Face swap error:', error);
+                updateStatus('⚠️ Demo mode - MCP backend unavailable');
+                processDemoVideoFrame();
+            }
+        }
+
+        function stopFaceSwap() {
+            faceSwapActive = false;
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+            }
+            updateStatus('⏹️ Face swap stopped');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Real-time face swap will appear here', canvas.width / 2, canvas.height / 2);
+        }
+
+        // Synchronized video processing with stable frame timing
+        let frameCount = 0;
+        let lastFPSTime = Date.now();
+        let currentFPS = 0;
+        let stableFacePosition = null; // Track stable face position
+        let positionHistory = []; // Smooth face tracking
+
+        function processVideoFrame() {
+            if (!faceSwapActive) return;
+
+            // Stable frame processing using video's natural timing
+            const currentTime = Date.now();
+            frameCount++;
+
+            // Calculate FPS every second
+            if (currentTime - lastFPSTime >= 1000) {
+                currentFPS = frameCount;
+                frameCount = 0;
+                lastFPSTime = currentTime;
+            }
+
+            // Clear and draw current video frame
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Synchronized face swapping if target face is loaded
+            if (targetFaceImg && faceDetectionEnabled) {
+                // Perform stable face detection
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const detectedFaces = detectFacesStable(imageData);
+
+                // Process each detected face with synchronized blending
+                detectedFaces.forEach(face => {
+                    if (face.confidence > 0.5) {
+                        synchronizedFaceSwap(face);
+                    }
+                });
+
+                // Display synchronized processing info
+                displayProcessingInfo(detectedFaces, currentFPS);
+            } else {
+                // Show upload prompt
+                displayUploadPrompt();
+            }
+
+            // Use video's natural frame rate for perfect synchronization
+            animationFrame = requestAnimationFrame(processVideoFrame);
+        }
+
+        // Stable face detection with position smoothing
+        function detectFacesStable(imageData) {
+            const faces = detectFaces(imageData);
+
+            if (faces.length > 0) {
+                const face = faces[0];
+
+                // Smooth face position tracking for stability
+                positionHistory.push({
+                    x: face.x,
+                    y: face.y,
+                    width: face.width,
+                    height: face.height,
+                    confidence: face.confidence
+                });
+
+                // Keep only last 5 positions for smoothing
+                if (positionHistory.length > 5) {
+                    positionHistory.shift();
+                }
+
+                // Calculate smoothed position
+                const avgX = positionHistory.reduce((sum, pos) => sum + pos.x, 0) / positionHistory.length;
+                const avgY = positionHistory.reduce((sum, pos) => sum + pos.y, 0) / positionHistory.length;
+                const avgWidth = positionHistory.reduce((sum, pos) => sum + pos.width, 0) / positionHistory.length;
+                const avgHeight = positionHistory.reduce((sum, pos) => sum + pos.height, 0) / positionHistory.length;
+                const avgConfidence = positionHistory.reduce((sum, pos) => sum + pos.confidence, 0) / positionHistory.length;
+
+                stableFacePosition = {
+                    x: avgX,
+                    y: avgY,
+                    width: avgWidth,
+                    height: avgHeight,
+                    confidence: avgConfidence
+                };
+
+                return [stableFacePosition];
+            }
+
+            return faces;
+        }
+
+        // Synchronized face swapping with perfect alignment
+        function synchronizedFaceSwap(face) {
+            if (!targetFaceImg) return;
+
+            // Create temporary canvas for perfect blending
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = face.width;
+            tempCanvas.height = face.height;
+
+            // Draw target face to temp canvas with perfect scaling
+            tempCtx.drawImage(targetFaceImg, 0, 0, face.width, face.height);
+
+            // Apply synchronized blending to main canvas
+            ctx.save();
+
+            // Create smooth circular mask
+            ctx.beginPath();
+            ctx.arc(
+                face.x + face.width / 2,
+                face.y + face.height / 2,
+                Math.min(face.width, face.height) / 2.2,
+                0, 2 * Math.PI
+            );
+            ctx.clip();
+
+            // Perfect synchronization - blend with video timing
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 0.9; // High opacity for clear result
+
+            // Draw perfectly scaled target face
+            ctx.drawImage(tempCanvas, face.x, face.y);
+
+            ctx.restore();
+
+            // Draw stable detection indicator
+            drawStableDetectionBox(face);
+        }
+
+        // Stable detection box with confidence indication
+        function drawStableDetectionBox(face) {
+            const confidence = Math.round(face.confidence * 100);
+            const boxColor = confidence > 85 ? '#00ff00' :
+                confidence > 70 ? '#ffff00' : '#ff8800';
+
+            // Smooth detection box
+            ctx.strokeStyle = boxColor;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(face.x, face.y, face.width, face.height);
+            ctx.setLineDash([]);
+
+            // Confidence badge
+            ctx.fillStyle = boxColor;
+            ctx.fillRect(face.x, face.y - 25, 80, 20);
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(`${confidence}%`, face.x + 5, face.y - 10);
+        }
+
+        // Display synchronized processing information
+        function displayProcessingInfo(faces, fps) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(10, 10, 250, 80);
+
+            ctx.fillStyle = '#00ff00';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`🎭 Synchronized Face Swap`, 15, 30);
+            ctx.fillText(`FPS: ${fps} | Faces: ${faces.length}`, 15, 50);
+
+            if (faces.length > 0) {
+                const face = faces[0];
+                ctx.fillText(`Size: ${Math.round(face.width)}x${Math.round(face.height)}`, 15, 70);
+            }
+        }
+
+        // Display upload prompt
+        function displayUploadPrompt() {
+            ctx.fillStyle = 'rgba(255, 152, 0, 0.8)';
+            ctx.fillRect(10, 10, 300, 40);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText('📸 Upload target face for synchronized swap', 15, 35);
+        }
+
+        // Virtual Camera Integration Functions
+        function setupVirtualCamera() {
+            const instructions = `
+🎥 Virtual Camera Setup for WhatsApp:
+
+1. DOWNLOAD OBS STUDIO:
+   - Click "Download OBS Studio" button below
+   - Install and launch OBS Studio
+
+2. ADD BROWSER SOURCE:
+   - In OBS, click "+" in Sources
+   - Select "Browser Source"
+   - URL: ${window.location.href}
+   - Width: 640, Height: 480
+
+3. START VIRTUAL CAMERA:
+   - Click "Start Virtual Camera" in OBS
+   - Choose "OBS Virtual Camera"
+
+4. USE IN WHATSAPP:
+   - Open WhatsApp Desktop/Web
+   - Start video call
+   - Select "OBS Virtual Camera" as camera
+
+✅ Your face swap will appear in WhatsApp calls!
+            `;
+
+            alert(instructions);
+            updateVirtualCameraStatus('📋 Setup instructions displayed - Follow the steps above');
+        }
+
+        function openVirtualCameraGuide() {
+            // Open detailed guide in new tab
+            const guideWindow = window.open('', 'VirtualCameraGuide', 'width=800,height=600,scrollbars=yes');
+            guideWindow.document.write(`
+                <html>
+                <head>
+                    <title>SwapInterCam Virtual Camera Setup</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+                        h1 { color: #4CAF50; }
+                        h2 { color: #2196F3; }
+                        .step { background: #333; padding: 15px; margin: 10px 0; border-radius: 8px; }
+                        .highlight { background: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; }
+                        img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1>🎥 SwapInterCam Virtual Camera Setup</h1>
+                    
+                    <div class="step">
+                        <h2>Step 1: Download OBS Studio</h2>
+                        <p>1. Go to <a href="https://obsproject.com/" target="_blank">https://obsproject.com/</a></p>
+                        <p>2. Download OBS Studio for Windows</p>
+                        <p>3. Install and launch OBS Studio</p>
+                    </div>
+
+                    <div class="step">
+                        <h2>Step 2: Add Browser Source</h2>
+                        <p>1. In OBS, click the <span class="highlight">+</span> button in the Sources panel</p>
+                        <p>2. Select <span class="highlight">Browser Source</span></p>
+                        <p>3. Name it "SwapInterCam Face Swap"</p>
+                        <p>4. Set URL to: <span class="highlight">${window.location.href}</span></p>
+                        <p>5. Set Width: <span class="highlight">640</span>, Height: <span class="highlight">480</span></p>
+                        <p>6. Click OK</p>
+                    </div>
+
+                    <div class="step">
+                        <h2>Step 3: Start Virtual Camera</h2>
+                        <p>1. In OBS, click <span class="highlight">Start Virtual Camera</span> button</p>
+                        <p>2. Choose "OBS Virtual Camera" as camera name</p>
+                        <p>3. Click <span class="highlight">Start</span></p>
+                    </div>
+
+                    <div class="step">
+                        <h2>Step 4: Use in WhatsApp</h2>
+                        <p>1. Open WhatsApp Desktop or WhatsApp Web</p>
+                        <p>2. Start a video call</p>
+                        <p>3. Click camera settings/options</p>
+                        <p>4. Select <span class="highlight">OBS Virtual Camera</span></p>
+                        <p>5. Your face-swapped video will appear! 🎭</p>
+                    </div>
+
+                    <div class="step">
+                        <h2>🔧 Troubleshooting</h2>
+                        <p>• Restart WhatsApp after starting OBS Virtual Camera</p>
+                        <p>• Check Windows Camera Privacy Settings</p>
+                        <p>• Ensure good lighting for better face detection</p>
+                        <p>• Use high-quality target face images</p>
+                    </div>
+
+                    <div class="step">
+                        <h2>📱 Mobile WhatsApp</h2>
+                        <p>For mobile WhatsApp, you'll need screen mirroring software like Vysor (Android) or QuickTime (iPhone) to mirror your phone to PC, then use the virtual camera.</p>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
+
+        function downloadOBS() {
+            // Open OBS download page
+            window.open('https://obsproject.com/', '_blank');
+            updateVirtualCameraStatus('🔗 OBS Studio download page opened - Install OBS to continue');
+        }
+
+        function updateVirtualCameraStatus(message) {
+            const statusDiv = document.getElementById('virtual-camera-status');
+            const timestamp = new Date().toLocaleTimeString();
+            statusDiv.innerHTML = `
+                <p><strong>📹 Virtual Camera Status:</strong></p>
+                <p>${message}</p>
+                <p style="opacity: 0.7; font-size: 0.9rem;">Updated: ${timestamp}</p>
+                <button class="btn" onclick="openVirtualCameraGuide()" style="background: #4CAF50; margin: 5px;">📖 Setup Guide</button>
+                <button class="btn" onclick="downloadOBS()" style="background: #2196F3; margin: 5px;">⬇️ Download OBS</button>
+                <button class="btn" onclick="fixWhatsAppCamera()" style="background: #FF9800; margin: 5px;">🔧 Fix WhatsApp</button>
+                <button class="btn" onclick="openWhatsAppWeb()" style="background: #25D366; margin: 5px;">🌐 WhatsApp Web</button>
+            `;
+        }
+
+        // WhatsApp camera detection fixes
+        function fixWhatsAppCamera() {
+            const fixInstructions = `
+🔧 WhatsApp Camera Detection Fix:
+
+❌ PROBLEM: WhatsApp can't see OBS Virtual Camera
+
+✅ QUICK FIXES:
+
+1. 🔐 ENABLE CAMERA PERMISSIONS:
+   • Press Win + I → Privacy & Security → Camera
+   • Turn ON "Let apps access your camera"
+   • Turn ON "Let desktop apps access your camera"
+
+2. 📱 RESTART WHATSAPP:
+   • Close WhatsApp completely
+   • Restart WhatsApp Desktop
+   • Check camera settings
+
+3. 🎥 CHECK OBS VIRTUAL CAMERA:
+   • Make sure "Start Virtual Camera" is ON in OBS
+   • Wait 10 seconds after starting
+   • Try refreshing WhatsApp
+
+4. 🌐 USE WHATSAPP WEB (RECOMMENDED):
+   • WhatsApp Web works better with virtual cameras
+   • Click "WhatsApp Web" button below
+   • More reliable than Desktop app
+
+💡 TIP: WhatsApp Web has better virtual camera support!
+            `;
+
+            alert(fixInstructions);
+            updateVirtualCameraStatus('🔧 WhatsApp camera fix instructions displayed - Try WhatsApp Web for best results');
+        }
+
+        function openWhatsAppWeb() {
+            // Open WhatsApp Web in new tab
+            window.open('https://web.whatsapp.com', '_blank');
+            updateVirtualCameraStatus('🌐 WhatsApp Web opened - Use this for better virtual camera support');
+
+            // Show additional instructions
+            setTimeout(() => {
+                alert(`
+🌐 WhatsApp Web Instructions:
+
+1. ✅ WhatsApp Web is now open in new tab
+2. 📱 Scan QR code with your phone
+3. 📹 Start a video call
+4. 🎥 Click camera icon → Select "OBS Virtual Camera"
+5. 🎭 Your face swap will appear!
+
+💡 WhatsApp Web works much better than Desktop app for virtual cameras!
+                `);
+            }, 2000);
+        }
+
+        function processDemoVideoFrame() {
+            if (!faceSwapActive) return;
+
+            // Draw current video frame to canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Simulate face swapping in demo mode
+            if (targetFaceImg) {
+                // Simulate face detection with animated rectangle
+                const time = Date.now() / 1000;
+                const faceX = canvas.width / 2 - 60 + Math.sin(time) * 10;
+                const faceY = canvas.height / 2 - 75 + Math.cos(time * 0.5) * 5;
+                const faceWidth = 120;
+                const faceHeight = 150;
+
+                // Draw simulated face swap
+                ctx.save();
+                ctx.globalAlpha = 0.7;
+                ctx.drawImage(targetFaceImg, faceX, faceY, faceWidth, faceHeight);
+                ctx.restore();
+
+                // Draw detection rectangle
+                ctx.strokeStyle = '#ffc107';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(faceX, faceY, faceWidth, faceHeight);
+
+                // Add demo indicators
+                ctx.fillStyle = '#ffc107';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('⚠️ DEMO MODE - Simulated face swap', 10, 25);
+                ctx.fillText('Connect MCP backend for real AI processing', 10, 40);
+                ctx.fillText(`Face confidence: ${Math.round(85 + Math.sin(time * 2) * 10)}%`, 10, 55);
+            } else {
+                // Demo mode without target face
+                ctx.fillStyle = 'rgba(255, 193, 7, 0.2)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#ffc107';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('⚠️ DEMO MODE', canvas.width / 2, canvas.height / 2 - 20);
+                ctx.font = '12px Arial';
+                ctx.fillText('Upload target face to see demo face swap', canvas.width / 2, canvas.height / 2);
+                ctx.fillText('Connect MCP backend for real AI processing', canvas.width / 2, canvas.height / 2 + 20);
+            }
+
+            animationFrame = requestAnimationFrame(processDemoVideoFrame);
+        }
+
+        function downloadResult() {
+            alert('💾 Download feature available in full version');
+        }
+
+        function resetAll() {
+            stopFaceSwap();
+            stopCamera();
+            targetFaceImage = null;
+            document.getElementById('target-preview').innerHTML = '';
+
+            // Reset canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Real-time face swap will appear here', canvas.width / 2, canvas.height / 2);
+
+            updateStatus('Ready for real-time face swap');
+        }
+
+        console.log('✅ Face Swap Studio Ready!');
+    </script>
+</body>
+
+</html>

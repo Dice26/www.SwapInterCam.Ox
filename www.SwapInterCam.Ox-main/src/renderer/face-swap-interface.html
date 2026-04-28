@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwapInterCam - Face Swap Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .face-swap-container {
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .upload-panel {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .preview-panel {
+            flex: 2;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .controls-panel {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .uploaded-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .camera-preview {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .camera-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .camera-placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .control-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+        }
+
+        .status-dot.inactive {
+            background: #ff6b6b;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .face-detection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .face-box {
+            position: absolute;
+            border: 2px solid #4CAF50;
+            border-radius: 4px;
+            background: rgba(76, 175, 80, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <button class="back-button" onclick="goBack()">← Back to Main</button>
+    
+    <div class="face-swap-container">
+        <!-- Upload Panel -->
+        <div class="upload-panel">
+            <h2 class="panel-title">🎭 Upload Target Face</h2>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Drop image here or click to browse</div>
+                <div class="upload-hint">Supports JPG, PNG, GIF (Max 10MB)</div>
+            </div>
+            
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            
+            <div id="uploadedImageContainer" style="display: none;">
+                <img id="uploadedImage" class="uploaded-image" alt="Uploaded face">
+                <button class="btn btn-secondary" onclick="clearUploadedImage()">Remove Image</button>
+            </div>
+            
+            <div class="status-indicator">
+                <div class="status-dot" id="uploadStatus"></div>
+                <span id="uploadStatusText">No image uploaded</span>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="preview-panel">
+            <h2 class="panel-title">📹 Live Camera Preview</h2>
+            
+            <div class="camera-preview" id="cameraPreview">
+                <video id="cameraVideo" class="camera-video" autoplay muted></video>
+                <div class="camera-placeholder" id="cameraPlaceholder">
+                    Click "Start Camera" to begin
+                </div>
+                <canvas id="faceDetectionCanvas" class="face-detection-overlay"></canvas>
+            </div>
+            
+            <div class="status-indicator">
+                <div class="status-dot inactive" id="cameraStatus"></div>
+                <span id="cameraStatusText">Camera not started</span>
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <h2 class="panel-title">⚙️ Face Swap Controls</h2>
+            
+            <button class="btn btn-primary" id="startCameraBtn" onclick="startCamera()">Start Camera</button>
+            <button class="btn btn-secondary" id="stopCameraBtn" onclick="stopCamera()" style="display: none;">Stop Camera</button>
+            
+            <div class="control-group">
+                <label class="control-label">Face Swap Intensity: <span id="intensityValue">80%</span></label>
+                <input type="range" class="control-slider" id="intensitySlider" min="0" max="100" value="80">
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Blend Smoothness: <span id="smoothnessValue">60%</span></label>
+                <input type="range" class="control-slider" id="smoothnessSlider" min="0" max="100" value="60">
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Face Detection Sensitivity: <span id="sensitivityValue">70%</span></label>
+                <input type="range" class="control-slider" id="sensitivitySlider" min="0" max="100" value="70">
+            </div>
+            
+            <button class="btn btn-primary" id="enableFaceSwapBtn" onclick="toggleFaceSwap()" disabled>Enable Face Swap</button>
+            
+            <div class="status-indicator">
+                <div class="status-dot inactive" id="faceSwapStatus"></div>
+                <span id="faceSwapStatusText">Face swap disabled</span>
+            </div>
+            
+            <button class="btn" onclick="saveSnapshot()">📸 Save Snapshot</button>
+            <button class="btn" onclick="recordVideo()">🎥 Record Video</button>
+        </div>
+    </div>
+
+    <script>
+        let cameraStream = null;
+        let faceSwapEnabled = false;
+        let uploadedImageData = null;
+
+        // Initialize the interface
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            checkCameraPermissions();
+        });
+
+        function setupEventListeners() {
+            // Upload area events
+            const uploadArea = document.getElementById('uploadArea');
+            const imageInput = document.getElementById('imageInput');
+            
+            uploadArea.addEventListener('click', () => imageInput.click());
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('drop', handleDrop);
+            imageInput.addEventListener('change', handleImageSelect);
+            
+            // Slider events
+            document.getElementById('intensitySlider').addEventListener('input', updateIntensity);
+            document.getElementById('smoothnessSlider').addEventListener('input', updateSmoothness);
+            document.getElementById('sensitivitySlider').addEventListener('input', updateSensitivity);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleImageFile(files[0]);
+            }
+        }
+
+        function handleImageSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageFile(file);
+            }
+        }
+
+        function handleImageFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB.');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImageData = e.target.result;
+                displayUploadedImage(e.target.result);
+                updateUploadStatus(true);
+                checkReadyState();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function displayUploadedImage(imageSrc) {
+            document.getElementById('uploadedImage').src = imageSrc;
+            document.getElementById('uploadedImageContainer').style.display = 'block';
+            document.getElementById('uploadArea').style.display = 'none';
+        }
+
+        function clearUploadedImage() {
+            uploadedImageData = null;
+            document.getElementById('uploadedImageContainer').style.display = 'none';
+            document.getElementById('uploadArea').style.display = 'block';
+            updateUploadStatus(false);
+            checkReadyState();
+        }
+
+        function updateUploadStatus(uploaded) {
+            const statusDot = document.getElementById('uploadStatus');
+            const statusText = document.getElementById('uploadStatusText');
+            
+            if (uploaded) {
+                statusDot.classList.remove('inactive');
+                statusText.textContent = 'Target face uploaded';
+            } else {
+                statusDot.classList.add('inactive');
+                statusText.textContent = 'No image uploaded';
+            }
+        }
+
+        async function checkCameraPermissions() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                console.log(`Found ${videoDevices.length} camera(s)`);
+            } catch (error) {
+                console.error('Error checking camera permissions:', error);
+            }
+        }
+
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 } 
+                });
+                
+                const video = document.getElementById('cameraVideo');
+                video.srcObject = cameraStream;
+                
+                document.getElementById('cameraPlaceholder').style.display = 'none';
+                document.getElementById('startCameraBtn').style.display = 'none';
+                document.getElementById('stopCameraBtn').style.display = 'block';
+                
+                updateCameraStatus(true);
+                checkReadyState();
+                
+                // Start face detection
+                startFaceDetection();
+                
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                alert('Unable to access camera. Please check permissions.');
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            
+            document.getElementById('cameraVideo').srcObject = null;
+            document.getElementById('cameraPlaceholder').style.display = 'block';
+            document.getElementById('startCameraBtn').style.display = 'block';
+            document.getElementById('stopCameraBtn').style.display = 'none';
+            
+            updateCameraStatus(false);
+            checkReadyState();
+        }
+
+        function updateCameraStatus(active) {
+            const statusDot = document.getElementById('cameraStatus');
+            const statusText = document.getElementById('cameraStatusText');
+            
+            if (active) {
+                statusDot.classList.remove('inactive');
+                statusText.textContent = 'Camera active';
+            } else {
+                statusDot.classList.add('inactive');
+                statusText.textContent = 'Camera not started';
+            }
+        }
+
+        function startFaceDetection() {
+            // Placeholder for face detection logic
+            console.log('Face detection started');
+        }
+
+        function checkReadyState() {
+            const enableBtn = document.getElementById('enableFaceSwapBtn');
+            const ready = uploadedImageData && cameraStream;
+            
+            enableBtn.disabled = !ready;
+            
+            if (ready) {
+                enableBtn.textContent = 'Enable Face Swap';
+                enableBtn.classList.add('btn-primary');
+            } else {
+                enableBtn.textContent = 'Upload Image & Start Camera First';
+                enableBtn.classList.remove('btn-primary');
+            }
+        }
+
+        function toggleFaceSwap() {
+            faceSwapEnabled = !faceSwapEnabled;
+            
+            const btn = document.getElementById('enableFaceSwapBtn');
+            const statusDot = document.getElementById('faceSwapStatus');
+            const statusText = document.getElementById('faceSwapStatusText');
+            
+            if (faceSwapEnabled) {
+                btn.textContent = 'Disable Face Swap';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+                statusDot.classList.remove('inactive');
+                statusText.textContent = 'Face swap active';
+                
+                // Start face swap processing
+                startFaceSwapProcessing();
+            } else {
+                btn.textContent = 'Enable Face Swap';
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-primary');
+                statusDot.classList.add('inactive');
+                statusText.textContent = 'Face swap disabled';
+                
+                // Stop face swap processing
+                stopFaceSwapProcessing();
+            }
+        }
+
+        function startFaceSwapProcessing() {
+            console.log('Face swap processing started');
+            // This would integrate with the face-swap backend
+        }
+
+        function stopFaceSwapProcessing() {
+            console.log('Face swap processing stopped');
+        }
+
+        function updateIntensity(e) {
+            document.getElementById('intensityValue').textContent = e.target.value + '%';
+        }
+
+        function updateSmoothness(e) {
+            document.getElementById('smoothnessValue').textContent = e.target.value + '%';
+        }
+
+        function updateSensitivity(e) {
+            document.getElementById('sensitivityValue').textContent = e.target.value + '%';
+        }
+
+        function saveSnapshot() {
+            alert('📸 Snapshot saved to gallery!');
+        }
+
+        function recordVideo() {
+            alert('🎥 Video recording started!');
+        }
+
+        function goBack() {
+            if (cameraStream) {
+                stopCamera();
+            }
+            window.close();
+        }
+    </script>
+</body>
+</html>
